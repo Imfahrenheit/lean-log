@@ -10,7 +10,7 @@ export async function createMeal(payload: {
   target_fat_g?: number | null;
   target_calories?: number | null;
 }) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -45,7 +45,7 @@ export async function updateMeal(
     archived: boolean;
   }>
 ) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -61,7 +61,7 @@ export async function updateMeal(
 }
 
 export async function deleteMeal(id: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -77,7 +77,7 @@ export async function deleteMeal(id: string) {
 }
 
 export async function reorderMeals(idsInOrder: string[]) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

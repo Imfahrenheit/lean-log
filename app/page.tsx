@@ -1,6 +1,1 @@
-import { redirect } from "next/navigation";
-
-export default function Root() {
-  redirect("/(app)");
-  return null;
-}
+export { default } from "./(app)/page";

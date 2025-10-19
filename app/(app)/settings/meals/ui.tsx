@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -8,7 +8,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { createMeal, updateMeal, deleteMeal, reorderMeals } from "./actions";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Meal = {
   id: string;
@@ -39,7 +38,6 @@ export default function MealsClient({
 }: {
   initialMeals: Meal[];
 }) {
-  const supabase = createSupabaseBrowserClient();
   const [meals, setMeals] = useState<Meal[]>(initialMeals);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Meal>>({ name: "" });
@@ -86,8 +84,8 @@ export default function MealsClient({
       }
       setOpen(false);
       setForm({ name: "" });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to save");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to save"));
     }
   }
 
@@ -97,9 +95,9 @@ export default function MealsClient({
     try {
       await deleteMeal(id);
       toast.success("Deleted");
-    } catch (e: any) {
+    } catch (error: unknown) {
       setMeals(previous);
-      toast.error(e?.message ?? "Failed to delete");
+      toast.error(getErrorMessage(error, "Failed to delete"));
     }
   }
 
@@ -254,4 +252,11 @@ function numOrEmpty(n: number | null | undefined): string {
 
 function numOrNull(n: number | null | undefined): number | null {
   return n == null ? null : n;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
 }

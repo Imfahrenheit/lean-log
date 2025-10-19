@@ -64,13 +64,13 @@ Migrations live in `supabase/migrations/`. Baseline created: `20251019_000001_le
 - [x] Protected `(app)` layout and `(auth)/signin` route
 - [x] Profile form (RHF + zod) with live BMI and suggested calories
 
-### Milestone 2 – Meals Manager
+### Milestone 2 – Meals Manager (DONE)
 
-- [ ] Route: `/settings/meals`
-- [ ] Components: list (sortable), form modal, macro targets
-- [ ] Server actions for CRUD (optimistic reorder)
+- [x] Route: `/settings/meals`
+- [x] Components: list (sortable), form modal, macro targets
+- [x] Server actions for CRUD (optimistic reorder)
 
-### Milestone 3 – Daily Log & Entries
+### Milestone 3 – Daily Log & Entries (IN PROGRESS)
 
 - [ ] Route: `/` (Today view) under `(app)` with date picker
 - [ ] `getOrCreateDayLog` server action

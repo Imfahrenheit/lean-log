@@ -1,110 +1,129 @@
-import Image from "next/image";
+import { redirect } from "next/navigation";
+import { calculateCaloriesFromMacros } from "@/lib/calculations";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default function Home() {
+import { getOrCreateDayLog } from "./actions";
+import { MacroTotals, TodaySummary, TodayViewProps } from "./today.types";
+import TodayClient from "./today-client";
+
+type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+async function resolveDate(searchParams?: PageSearchParams): Promise<string> {
+  const params = await searchParams;
+  const param = params?.date;
+  const value = Array.isArray(param) ? param[0] : param;
+  if (!value) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  return parsed.toISOString().slice(0, 10);
+}
+
+function aggregateEntries(entries: TodayViewProps["entries"]): MacroTotals {
+  return entries.reduce<MacroTotals>(
+    (acc, entry) => {
+      acc.calories += entry.total_calories ?? 0;
+      acc.protein += entry.protein_g ?? 0;
+      acc.carbs += entry.carbs_g ?? 0;
+      acc.fat += entry.fat_g ?? 0;
+      return acc;
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+}
+
+function aggregateMealTargets(meals: TodayViewProps["meals"]): MacroTotals {
+  return meals.reduce<MacroTotals>(
+    (acc, meal) => {
+      acc.protein += meal.target_protein_g ?? 0;
+      acc.carbs += meal.target_carbs_g ?? 0;
+      acc.fat += meal.target_fat_g ?? 0;
+      if (meal.target_calories != null) {
+        acc.calories += meal.target_calories;
+      } else {
+        const computed = calculateCaloriesFromMacros(
+          meal.target_protein_g ?? 0,
+          meal.target_carbs_g ?? 0,
+          meal.target_fat_g ?? 0
+        );
+        acc.calories += computed;
+      }
+      return acc;
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+}
+
+export default async function TodayPage({
+  searchParams,
+}: {
+  searchParams?: PageSearchParams;
+}) {
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/signin");
+  }
+
+  const resolvedDate = await resolveDate(searchParams);
+  const dayLog = await getOrCreateDayLog(resolvedDate);
+
+  const { data: mealsData } = await supabase
+    .from("meals")
+    .select(
+      "id, name, order_index, target_protein_g, target_carbs_g, target_fat_g, target_calories"
+    )
+    .eq("user_id", user.id)
+    .eq("archived", false)
+    .order("order_index", { ascending: true });
+
+  const { data: entriesData } = await supabase
+    .from("meal_entries")
+    .select(
+      "id, day_log_id, meal_id, name, protein_g, carbs_g, fat_g, calories_override, total_calories, order_index"
+    )
+    .eq("day_log_id", dayLog.id)
+    .order("meal_id", { ascending: true, nullsFirst: true })
+    .order("order_index", { ascending: true });
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("target_calories, suggested_calories")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const meals = mealsData ?? [];
+  const entries = entriesData ?? [];
+
+  const totals = aggregateEntries(entries);
+  const targetMacros = aggregateMealTargets(meals);
+  const profileTargetCalories = profile?.target_calories ?? profile?.suggested_calories ?? null;
+  const targetCalories =
+    dayLog.target_calories_override ??
+    profileTargetCalories ??
+    (targetMacros.calories > 0 ? targetMacros.calories : null);
+
+  const summary: TodaySummary = {
+    totals,
+    targetMacros,
+    targetCalories,
+    profileTargetCalories,
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/(app)/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              aria-hidden
-              src="/window.svg"
-              alt="Window icon"
-              width={16}
-              height={16}
-            />
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    <TodayClient
+      selectedDate={dayLog.log_date ?? resolvedDate}
+      dayLog={dayLog}
+      meals={meals}
+      entries={entries}
+      summary={summary}
+    />
   );
 }

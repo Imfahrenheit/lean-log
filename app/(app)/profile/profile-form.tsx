@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { calculateBmi, mifflinStJeorSuggestion, type Sex } from "@/lib/calculations";
@@ -33,7 +33,7 @@ export default function ProfileForm({ initialData }: { initialData: Partial<Form
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  resolver: zodResolver(schema) as Resolver<FormValues>,
     defaultValues: {
       id: initialData.id,
       age: initialData.age ?? undefined,

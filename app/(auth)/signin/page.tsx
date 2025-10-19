@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createSupabaseBrowserClient();
 
   const [email, setEmail] = useState("");
@@ -14,12 +15,39 @@ export default function SignInPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const urlError = searchParams.get("error");
+    const urlMessage = searchParams.get("message");
+
+    if (urlError) {
+      setError(
+        urlError === "missing_code"
+          ? "The login link is missing or has already been used. Please request a new magic link."
+          : urlError,
+      );
+      setMessage(null);
+      return;
+    }
+
+    if (urlMessage) {
+      setMessage(urlMessage);
+      setError(null);
+    }
+  }, [searchParams]);
+
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setMessage(null);
-    const { error } = await supabase.auth.signInWithOtp({ email });
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/callback`,
+      },
+    });
+
     setLoading(false);
     if (error) return setError(error.message);
     setMessage("Check your email for the magic link.");
@@ -85,5 +113,20 @@ export default function SignInPage() {
       {message && <p className="text-green-600 text-sm">{message}</p>}
       {error && <p className="text-red-600 text-sm">{error}</p>}
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-md p-6 space-y-3">
+          <h1 className="text-2xl font-semibold">Sign in</h1>
+          <p className="text-sm text-gray-500">Loading sign-in form…</p>
+        </div>
+      }
+    >
+      <SignInContent />
+    </Suspense>
   );
 }
