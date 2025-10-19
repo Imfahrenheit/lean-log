@@ -2,6 +2,8 @@
 
 This repo implements a calorie/weight tracker using Next.js (App Router), Tailwind, Supabase (new API keys), shadcn/ui, and PWA features.
 
+**Design Philosophy**: Mobile-first responsive design optimized for quick daily logging on-the-go with minimal scrolling.
+
 ### Environment
 
 Create `.env.local`:
@@ -42,8 +44,11 @@ Migrations live in `supabase/migrations/`. Baseline created: `20251019_000001_le
 - `lib/supabase/client.ts`, `lib/supabase/server.ts` (SSR-friendly clients)
 - Route groups:
   - `app/(auth)/signin` – magic link + password sign-in
+  - `app/(auth)/callback` – OAuth callback handler
   - `app/(app)` – protected layout checks session server-side; redirects to `/signin`
   - root `app/page.tsx` redirects to `/(app)`
+- **Fixed**: Next.js 15 compatibility (async searchParams, proper revalidatePath usage)
+- **Fixed**: Supabase UUID null handling using `.is()` for null checks
 
 ### Profile
 
@@ -58,43 +63,57 @@ Migrations live in `supabase/migrations/`. Baseline created: `20251019_000001_le
 
 ## Roadmap
 
-### Milestone 1 – Auth & Profile (IN PROGRESS/DONE)
+### Milestone 1 – Auth & Profile ✅ DONE
 
 - [x] Supabase env setup and clients
 - [x] Protected `(app)` layout and `(auth)/signin` route
 - [x] Profile form (RHF + zod) with live BMI and suggested calories
+- [x] Magic link authentication with callback handling
 
-### Milestone 2 – Meals Manager (DONE)
+### Milestone 2 – Meals Manager ✅ DONE
 
 - [x] Route: `/settings/meals`
 - [x] Components: list (sortable), form modal, macro targets
 - [x] Server actions for CRUD (optimistic reorder)
 
-### Milestone 3 – Daily Log & Entries (IN PROGRESS)
+### Milestone 3 – Daily Log & Entries ✅ DONE
 
-- [ ] Route: `/` (Today view) under `(app)` with date picker
-- [ ] `getOrCreateDayLog` server action
-- [ ] Meal cards, entries form, live totals & progress
-- [ ] Duplicate day from `/history`
+- [x] Route: `/` (Today view) under `(app)` with date picker
+- [x] `getOrCreateDayLog` server action
+- [x] Meal cards, entries form, live totals & progress
+- [x] Drag-and-drop entry reordering
+- [x] Quick add entries (unassigned to meals)
+- [x] Daily target override and notes
+- [x] Real-time macro tracking with progress bars
 
-### Milestone 4 – Weight Tracking
+### Milestone 4 – Mobile UI Optimization (IN PROGRESS)
+
+- [ ] Review and optimize mobile layouts for all pages
+- [ ] Ensure minimal scrolling on mobile devices
+- [ ] Touch-friendly button sizes and spacing
+- [ ] Optimize form inputs for mobile keyboards
+- [ ] Test responsive breakpoints (sm, md, lg)
+- [ ] Add swipe gestures where appropriate
+
+### Milestone 5 – Weight Tracking
 
 - [ ] Route: `/weight` with form, list, chart (recharts)
 - [ ] BMI card wired to latest weight
 
-### Milestone 5 – History & Data Management
+### Milestone 6 – History & Data Management
 
 - [ ] `/history` calendar and day summaries
 - [ ] Export (Edge Function + Storage) / Import (server action + transaction)
 - [ ] Undo delete with toasts
+- [ ] Duplicate day functionality
 
-### Milestone 6 – PWA Polish
+### Milestone 7 – PWA Polish
 
 - [ ] `manifest.webmanifest`, icons, theme colors
 - [ ] Service worker with Workbox strategies
 - [ ] Offline banner + background sync for queued actions
 
-### Milestone 7 – QA & Accessibility
+### Milestone 8 – QA & Accessibility
 
 - [ ] Unit tests for BMI and macros
 - [ ] Playwright smoke + axe a11y checks
@@ -109,11 +128,33 @@ supabase db push --linked  # apply DB changes
 
 ## File map (key)
 
-- `app/(auth)/signin/page.tsx` – sign-in UI
+- `app/(auth)/signin/page.tsx` – sign-in UI with magic link and password
+- `app/(auth)/callback/route.ts` – authentication callback handler
 - `app/(app)/layout.tsx` – server auth guard + Toaster
-- `app/(app)/page.tsx` – placeholder home
+- `app/(app)/page.tsx` – today view (daily log)
+- `app/(app)/today-client.tsx` – client components for daily tracking
+- `app/(app)/today.types.ts` – TypeScript types for daily log
+- `app/(app)/actions.ts` – server actions for meal entries and day logs
 - `app/(app)/profile/*` – profile page + form
+- `app/(app)/settings/meals/*` – meals management page
 - `lib/supabase/*` – Supabase clients
 - `lib/calculations.ts` – BMI/macros/Mifflin–St Jeor
 - `components/ui/*` – shadcn/ui components
 - `supabase/migrations/*` – DB schema
+
+## Recent Fixes
+
+### Next.js 15 Compatibility
+- Made `searchParams` async in page components
+- Moved `revalidatePath` calls out of render functions
+- Updated to use proper Server Actions patterns
+
+### Supabase Query Issues
+- Fixed UUID null handling using `.is("column", null)` instead of `.match()`
+- Added sanitization for string "null" values in all server actions
+- Proper null checks in `addMealEntry`, `updateMealEntry`, and `reorderMealEntries`
+
+### Authentication
+- Fixed magic link callback URL path
+- Simplified authentication flow
+- Cleaned up Supabase SSR client configuration
