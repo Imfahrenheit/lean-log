@@ -42,3 +42,4 @@ next-env.d.ts
 .cursor/
 .taskmaster/
 node_modules/
+supabase/.temp/
