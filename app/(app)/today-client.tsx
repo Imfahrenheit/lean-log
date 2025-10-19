@@ -471,9 +471,9 @@ export default function TodayClient({
 
   return (
     <div className="max-w-5xl mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold">Today</h1>
+          <h2 className="text-xl sm:text-2xl font-semibold">Today</h2>
           <p className="text-sm text-muted-foreground">{friendlyDate}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
@@ -522,7 +522,7 @@ export default function TodayClient({
             </DialogContent>
           </Dialog>
         </div>
-      </header>
+      </div>
 
       <section className="grid gap-3 sm:gap-4 md:grid-cols-2">
         <Card>

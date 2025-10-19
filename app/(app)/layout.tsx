@@ -15,9 +15,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect("/signin");
   }
 
+  console.log("[AppLayout] Rendering with user:", user.email);
+
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b backdrop-blur-lg bg-muted/30 supports-[backdrop-filter]:bg-muted/20 shadow-sm">
         <div className="container flex h-14 max-w-screen-2xl items-center justify-between px-4">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
