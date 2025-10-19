@@ -470,23 +470,25 @@ export default function TodayClient({
     : null;
 
   return (
-    <div className="max-w-5xl mx-auto p-4 space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="max-w-5xl mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Today</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold">Today</h1>
           <p className="text-sm text-muted-foreground">{friendlyDate}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Input
             type="date"
             value={selectedDate}
             onChange={(event) => handleDateChange(event.target.value)}
+            className="h-10"
           />
           <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" className="h-10">
                 <CopyIcon className="mr-2 h-4 w-4" />
-                Duplicate
+                <span className="hidden sm:inline">Duplicate</span>
+                <span className="sm:hidden">Copy Day</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -522,7 +524,7 @@ export default function TodayClient({
         </div>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-3 sm:gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Calories</CardTitle>
@@ -580,7 +582,7 @@ export default function TodayClient({
         </Card>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-3 sm:gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Daily target override</CardTitle>
@@ -638,7 +640,7 @@ export default function TodayClient({
 
       <Separator />
 
-      <section className="space-y-5">
+      <section className="space-y-3 sm:space-y-5">
         {meals.length === 0 && (
           <Card>
             <CardContent className="py-6 text-sm text-muted-foreground">
@@ -750,11 +752,11 @@ function MealCard({ meal, entries, onAdd, onEdit, onDelete, onReorder }: MealCar
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-lg">{meal.name}</CardTitle>
-        <Button size="sm" onClick={onAdd}>
-          <PlusIcon className="mr-2 h-4 w-4" />
-          Add entry
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <CardTitle className="text-base sm:text-lg">{meal.name}</CardTitle>
+        <Button size="sm" onClick={onAdd} className="h-9">
+          <PlusIcon className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Add entry</span>
         </Button>
       </CardHeader>
       <CardContent>
@@ -814,28 +816,28 @@ function SortableEntry({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "border border-border rounded-md p-3 bg-card flex items-center justify-between gap-3",
+        "border border-border rounded-md p-3 sm:p-4 bg-card flex items-center justify-between gap-2 sm:gap-3 min-h-[60px]",
         isDragging && "opacity-80 shadow-lg"
       )}
       {...attributes}
       {...listeners}
     >
-      <div>
-        <div className="font-medium text-sm">{entry.name}</div>
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-sm truncate">{entry.name}</div>
         <div className="text-xs text-muted-foreground">
           P {formatNumber(entry.protein_g)} / C {formatNumber(entry.carbs_g)} / F {formatNumber(entry.fat_g)}
           {" · "}
           {formatNumber(entry.total_calories ?? 0)} kcal
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={onEdit}>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <Button variant="ghost" size="icon" onClick={onEdit} className="h-9 w-9">
           <Pencil1Icon className="h-4 w-4" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
-          className="text-destructive"
+          className="text-destructive h-9 w-9"
           onClick={onDelete}
         >
           <TrashIcon className="h-4 w-4" />
