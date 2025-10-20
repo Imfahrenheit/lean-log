@@ -516,7 +516,13 @@ export default function TodayClient({
                   id="duplicate-date"
                   type="date"
                   value={duplicateDate}
-                  max={selectedDate}
+                  max={(() => {
+                    // Convert selectedDate (YYYY-MM-DD, possibly UTC) to local date string
+                    const d = new Date(selectedDate + 'T00:00:00');
+                    const offset = d.getTimezoneOffset();
+                    const local = new Date(d.getTime() - offset * 60000);
+                    return local.toISOString().slice(0, 10);
+                  })()}
                   onChange={(event) => setDuplicateDate(event.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">

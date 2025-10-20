@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { calculateCaloriesFromMacros } from "@/lib/calculations";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -6,6 +7,7 @@ import { getOrCreateDayLog } from "./actions";
 import { getLatestWeightEntry } from "./weight/actions";
 import { MacroTotals, TodaySummary, TodayViewProps } from "./today.types";
 import TodayClient from "./today-client";
+import { TodayDateSync } from "./today-date-sync";
 
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -122,14 +124,19 @@ export default async function TodayPage({
   };
 
   return (
-    <TodayClient
-      selectedDate={dayLog.log_date ?? resolvedDate}
-      dayLog={dayLog}
-      meals={meals}
-      entries={entries}
-      summary={summary}
-      heightCm={profile?.height_cm ?? null}
-      latestWeightKg={latestWeight?.weight_kg ?? null}
-    />
+    <>
+      <Suspense fallback={null}>
+        <TodayDateSync />
+      </Suspense>
+      <TodayClient
+        selectedDate={dayLog.log_date ?? resolvedDate}
+        dayLog={dayLog}
+        meals={meals}
+        entries={entries}
+        summary={summary}
+        heightCm={profile?.height_cm ?? null}
+        latestWeightKg={latestWeight?.weight_kg ?? null}
+      />
+    </>
   );
 }
