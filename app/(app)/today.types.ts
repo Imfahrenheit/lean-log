@@ -48,4 +48,6 @@ export type TodayViewProps = {
   meals: MealTemplate[];
   entries: MealEntryDTO[];
   summary: TodaySummary;
+  heightCm: number | null;
+  latestWeightKg: number | null;
 };

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import {
   usePathname,
   useRouter,
@@ -190,6 +191,8 @@ export default function TodayClient({
   meals: incomingMeals,
   entries: incomingEntries,
   summary,
+  heightCm,
+  latestWeightKg,
 }: TodayViewProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -267,6 +270,15 @@ export default function TodayClient({
     () => formatDateLabel(selectedDate),
     [selectedDate]
   );
+
+  // Calculate BMI if both height and weight are available
+  const bmi = useMemo(() => {
+    if (!heightCm || heightCm <= 0 || !latestWeightKg || latestWeightKg <= 0) {
+      return null;
+    }
+    const heightM = heightCm / 100;
+    return latestWeightKg / (heightM * heightM);
+  }, [heightCm, latestWeightKg]);
 
   const unassignedEntries = useMemo(
     () => entries.filter((entry) => entry.meal_id == null),
@@ -524,7 +536,7 @@ export default function TodayClient({
         </div>
       </div>
 
-      <section className="grid gap-3 sm:gap-4 md:grid-cols-2">
+      <section className="grid gap-3 sm:gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Calories</CardTitle>
@@ -578,6 +590,48 @@ export default function TodayClient({
               consumed={totals.fat}
               target={summary.targetMacros.fat}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Weight & BMI</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {latestWeightKg && heightCm ? (
+              <>
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold">
+                    {latestWeightKg.toFixed(1)} kg
+                  </div>
+                  {bmi && (
+                    <div className="text-sm text-muted-foreground">
+                      BMI: <span className="font-medium">{bmi.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
+                <Link href="/weight">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Track Weight
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {!heightCm && !latestWeightKg
+                    ? "Set height and log weight to track BMI"
+                    : !heightCm
+                    ? "Set your height in profile to calculate BMI"
+                    : "Log your weight to see BMI"}
+                </p>
+                <Link href={!heightCm ? "/profile" : "/weight"}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    {!heightCm ? "Set Height" : "Log Weight"}
+                  </Button>
+                </Link>
+              </>
+            )}
           </CardContent>
         </Card>
       </section>

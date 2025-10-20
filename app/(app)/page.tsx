@@ -3,6 +3,7 @@ import { calculateCaloriesFromMacros } from "@/lib/calculations";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { getOrCreateDayLog } from "./actions";
+import { getLatestWeightEntry } from "./weight/actions";
 import { MacroTotals, TodaySummary, TodayViewProps } from "./today.types";
 import TodayClient from "./today-client";
 
@@ -95,9 +96,12 @@ export default async function TodayPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("target_calories, suggested_calories")
+    .select("target_calories, suggested_calories, height_cm")
     .eq("id", user.id)
     .maybeSingle();
+
+  // Fetch latest weight entry
+  const latestWeight = await getLatestWeightEntry();
 
   const meals = mealsData ?? [];
   const entries = entriesData ?? [];
@@ -124,6 +128,8 @@ export default async function TodayPage({
       meals={meals}
       entries={entries}
       summary={summary}
+      heightCm={profile?.height_cm ?? null}
+      latestWeightKg={latestWeight?.weight_kg ?? null}
     />
   );
 }

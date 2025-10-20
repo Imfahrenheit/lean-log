@@ -29,6 +29,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
                 Today
               </Link>
+              <Link href="/weight" className="text-muted-foreground hover:text-foreground transition-colors">
+                Weight
+              </Link>
               <Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
                 Profile
               </Link>
