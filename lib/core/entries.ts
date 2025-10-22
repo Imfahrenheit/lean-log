@@ -167,6 +167,30 @@ export async function deleteMealEntryForUser(userId: string, entryId: string): P
   if (error) throw error;
 }
 
+export async function listMealEntriesForDayForUser(userId: string, day_log_id: string): Promise<MealEntry[]> {
+  const supabase = createSupabaseServiceClient();
+
+  // Verify ownership
+  const owns = await supabase
+    .from("day_logs")
+    .select("id")
+    .eq("id", day_log_id)
+    .eq("user_id", userId)
+    .maybeSingle<{ id: string }>();
+  if (owns.error) throw owns.error;
+  if (!owns.data) throw new Error("Not authorized for day log");
+
+  const { data, error } = await supabase
+    .from("meal_entries")
+    .select(
+      "id, day_log_id, meal_id, name, protein_g, carbs_g, fat_g, calories_override, total_calories, order_index"
+    )
+    .eq("day_log_id", day_log_id)
+    .order("order_index", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as MealEntry[];
+}
+
 export async function bulkAddMealEntriesForUser(
   userId: string,
   payload: {

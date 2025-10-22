@@ -10,6 +10,7 @@ import {
   deleteMealEntryForUser,
   bulkAddMealEntriesForUser,
   bulkDeleteMealEntriesForUser,
+  listMealEntriesForDayForUser,
 } from "@/lib/core/entries";
 
 export async function POST(request: Request) {
@@ -124,6 +125,12 @@ export async function POST(request: Request) {
       const params = z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(body?.params ?? {});
       const count = await bulkDeleteMealEntriesForUser(auth.userId, params.ids);
       return json({ ok: true, result: { deleted: count } });
+    }
+
+    if (method === "entries.listByDayLog") {
+      const params = z.object({ day_log_id: z.string().uuid() }).parse(body?.params ?? {});
+      const items = await listMealEntriesForDayForUser(auth.userId, params.day_log_id);
+      return json({ ok: true, result: items });
     }
 
     return json({ ok: false, error: "Unknown method" }, 400);
