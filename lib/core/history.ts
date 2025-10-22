@@ -11,6 +11,21 @@ export type DaySummary = {
   notes: string | null;
 };
 
+type DayLogRow = {
+  id: string;
+  log_date: string;
+  target_calories_override: number | null;
+  notes: string | null;
+};
+
+type EntryRow = {
+  day_log_id: string;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fat_g: number | null;
+  total_calories: number | null;
+};
+
 export async function getDaySummariesForUser(userId: string, startDate: string, endDate: string): Promise<DaySummary[]> {
   const supabase = createSupabaseServiceClient();
 
@@ -38,15 +53,15 @@ export async function getDaySummariesForUser(userId: string, startDate: string, 
     .single<{ target_calories: number | null; suggested_calories: number | null }>();
   const defaultTarget = profile?.target_calories ?? profile?.suggested_calories ?? null;
 
-  const byDay = new Map<string, typeof entries>();
-  entries?.forEach((e) => {
+  const byDay = new Map<string, EntryRow[]>();
+  (entries as EntryRow[] | null | undefined)?.forEach((e) => {
     const arr = byDay.get(e.day_log_id) || [];
     arr.push(e);
     byDay.set(e.day_log_id, arr);
   });
 
-  const summaries: DaySummary[] = (dayLogs as any[]).map((log) => {
-    const dayEntries = byDay.get(log.id) || [];
+  const summaries: DaySummary[] = (dayLogs as DayLogRow[]).map((log) => {
+    const dayEntries = byDay.get(log.id) || ([] as EntryRow[]);
     const totals = dayEntries.reduce(
       (acc, e) => ({
         calories: acc.calories + (e.total_calories || 0),
