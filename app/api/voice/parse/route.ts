@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   if (!text) return json({ ok: false, error: "text is required" }, 400);
 
   // Scaffold: return 501 until wired to an LLM with structured output.
-  return json({ ok: false, error: "Parser not implemented", schema: MealSchema.describe() }, 501);
+  return json({ ok: false, error: "Parser not implemented" }, 501);
 }
 
 function json(payload: unknown, status = 200) {

@@ -1,4 +1,5 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import type { TablesInsert } from "@/lib/database.types";
 
 export type DayLog = {
   id: string;
@@ -208,7 +209,7 @@ export async function bulkAddMealEntriesForUser(
     maxByMeal.set(mid ?? "__null__", (r.data?.order_index ?? -1) + 1);
   }
 
-  const rows = payload.items.map((i) => {
+  const rows: TablesInsert<"meal_entries">[] = payload.items.map((i) => {
     const mealKey = (i.meal_id ?? null) || null;
     const next = maxByMeal.get(mealKey ?? "__null__") ?? 0;
     maxByMeal.set(mealKey ?? "__null__", next + 1);
@@ -221,12 +222,12 @@ export async function bulkAddMealEntriesForUser(
       fat_g: i.fat_g,
       calories_override: i.calories_override ?? null,
       order_index: next,
-    } as const;
+    };
   });
 
   const { data, error } = await supabase
     .from("meal_entries")
-    .insert(rows as any)
+    .insert(rows)
     .select(
       "id, day_log_id, meal_id, name, protein_g, carbs_g, fat_g, calories_override, total_calories, order_index"
     );
