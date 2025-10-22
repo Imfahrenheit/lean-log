@@ -81,6 +81,14 @@ All tool implementations call shared core functions that take an explicit `userI
 - [ ] Write client setup for Claude Desktop and ChatGPT MCP (server URL, headers)
 - [ ] Provide example `curl` scripts to smoke test SSE/messages
 
+### Minimal Voice Bridge (optional, messages-only)
+- Endpoints:
+  - `POST /api/voice/transcribe` → returns text from audio (501 until ASR configured; use Whisper or gpt-4o-mini-transcribe)
+  - `POST /api/voice/parse` → validates schema; later call an LLM with JSON schema for extraction (currently 501)
+  - `POST /api/voice/commit` → creates entries via `entries.add` or `entries.bulkAdd` after confirmation
+- Auth: reuse MCP API key (`Authorization: Bearer <key>`) for per-user scoping
+- Start with messages-only; add SSE later if streaming confirmations/progress are needed
+
 ### Environment Variables
 - `NEXT_PUBLIC_SUPABASE_URL` – existing
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` – use the new sb_publishable_… key (replaces anon)

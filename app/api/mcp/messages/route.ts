@@ -3,6 +3,14 @@ import { z } from "zod";
 import { getLatestWeightEntryForUser, createWeightEntryForUser, listRecentWeightEntriesForUser, deleteWeightEntryForUser } from "@/lib/core/weight";
 import { listMealsForUser } from "@/lib/core/meals";
 import { getDaySummariesForUser } from "@/lib/core/history";
+import {
+  getOrCreateDayLogForUser,
+  addMealEntryForUser,
+  updateMealEntryForUser,
+  deleteMealEntryForUser,
+  bulkAddMealEntriesForUser,
+  bulkDeleteMealEntriesForUser,
+} from "@/lib/core/entries";
 
 export async function POST(request: Request) {
   try {
@@ -53,6 +61,69 @@ export async function POST(request: Request) {
       const params = z.object({ startDate: z.string().min(1), endDate: z.string().min(1) }).parse(body?.params ?? {});
       const data = await getDaySummariesForUser(auth.userId, params.startDate, params.endDate);
       return json({ ok: true, result: data });
+    }
+
+    if (method === "entries.getOrCreateDayLog") {
+      const params = z.object({ date: z.string().min(1) }).parse(body?.params ?? {});
+      const log = await getOrCreateDayLogForUser(auth.userId, params.date);
+      return json({ ok: true, result: log });
+    }
+
+    if (method === "entries.add") {
+      const params = z.object({
+        day_log_id: z.string().uuid(),
+        meal_id: z.string().uuid().nullable().optional(),
+        name: z.string().min(1),
+        protein_g: z.number().min(0),
+        carbs_g: z.number().min(0),
+        fat_g: z.number().min(0),
+        calories_override: z.number().nullable().optional(),
+      }).parse(body?.params ?? {});
+      const entry = await addMealEntryForUser(auth.userId, params);
+      return json({ ok: true, result: entry });
+    }
+
+    if (method === "entries.update") {
+      const params = z.object({
+        id: z.string().uuid(),
+        name: z.string().min(1).optional(),
+        protein_g: z.number().min(0).optional(),
+        carbs_g: z.number().min(0).optional(),
+        fat_g: z.number().min(0).optional(),
+        calories_override: z.number().nullable().optional(),
+        meal_id: z.string().uuid().nullable().optional(),
+      }).parse(body?.params ?? {});
+      const { id, ...updates } = params;
+      await updateMealEntryForUser(auth.userId, id, updates);
+      return json({ ok: true, result: true });
+    }
+
+    if (method === "entries.delete") {
+      const params = z.object({ id: z.string().uuid() }).parse(body?.params ?? {});
+      await deleteMealEntryForUser(auth.userId, params.id);
+      return json({ ok: true, result: true });
+    }
+
+    if (method === "entries.bulkAdd") {
+      const params = z.object({
+        day_log_id: z.string().uuid(),
+        items: z.array(z.object({
+          meal_id: z.string().uuid().nullable().optional(),
+          name: z.string().min(1),
+          protein_g: z.number().min(0),
+          carbs_g: z.number().min(0),
+          fat_g: z.number().min(0),
+          calories_override: z.number().nullable().optional(),
+        })).min(1),
+      }).parse(body?.params ?? {});
+      const res = await bulkAddMealEntriesForUser(auth.userId, params);
+      return json({ ok: true, result: res });
+    }
+
+    if (method === "entries.bulkDelete") {
+      const params = z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(body?.params ?? {});
+      const count = await bulkDeleteMealEntriesForUser(auth.userId, params.ids);
+      return json({ ok: true, result: { deleted: count } });
     }
 
     return json({ ok: false, error: "Unknown method" }, 400);
