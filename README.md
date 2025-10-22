@@ -61,6 +61,10 @@ Migrations live in `supabase/migrations/`. Baseline created: `20251019_000001_le
 
 - Manifest, icons, Workbox service worker, offline queue using IndexedDB (sync_events)
 
+## MCP Server
+
+MCP server plan and milestones: see `docs/mcp-plan.md`.
+
 ## Roadmap
 
 ### Milestone 1 – Auth & Profile ✅ DONE
