@@ -43,6 +43,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               <Link href="/settings/meals" className="text-muted-foreground hover:text-foreground transition-colors">
                 Meals
               </Link>
+              <Link href="/settings/api-keys" className="text-muted-foreground hover:text-foreground transition-colors">
+                API Keys
+              </Link>
             </nav>
           </div>
           <UserMenu userEmail={user.email ?? "User"} />

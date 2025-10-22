@@ -22,6 +22,11 @@ This document outlines how we will embed a Model Context Protocol (MCP) server i
 - Auth model: Per-user API keys (simple and robust for “my desktop client talks to my data”). OAuth can be added later for third-party consent flows.
 - Data access: Use a Supabase service-role client inside MCP handlers but constrain every query by the authenticated `userId` derived from the API key. Do not trust client-provided `user_id`.
 
+### Streaming vs Messages (SSE keep-alive)
+- We’ll start with messages-only (simple request/response) which is sufficient for our current tools.
+- When we add streaming (token-by-token output, long-running progress, tailing logs), we’ll enable SSE on `/api/mcp/sse` and send periodic heartbeats (e.g., `: ping\n\n` every 15–25s) to avoid idle timeouts across proxies/clients.
+- SSE requirements when enabled: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`, flush after each event, and close gracefully on completion or client abort.
+
 ### Security Model
 - API keys
   - Table: `api_keys(user_id, name, hashed_key, created_at, last_used_at, revoked_at)`.

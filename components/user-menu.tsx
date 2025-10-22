@@ -61,6 +61,10 @@ export function UserMenu({ userEmail }: UserMenuProps) {
           <GearIcon className="mr-2 h-4 w-4" />
           Meals Settings
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/settings/api-keys")}>
+          <GearIcon className="mr-2 h-4 w-4" />
+          API Keys
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} disabled={isLoggingOut}>
           <ExitIcon className="mr-2 h-4 w-4" />
