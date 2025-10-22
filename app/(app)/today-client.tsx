@@ -30,6 +30,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  GlassCard,
+  GlassCardContent,
+  GlassCardHeader,
+  GlassCardTitle,
+} from "@/components/ui/glass-card";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -543,11 +549,11 @@ export default function TodayClient({
       </div>
 
       <section className="grid gap-3 sm:gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Calories</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <GlassCard>
+          <GlassCardHeader>
+            <GlassCardTitle>Calories</GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">{formatNumber(totals.calories)} kcal</span>
               {effectiveTargetCalories ? (
@@ -573,14 +579,14 @@ export default function TodayClient({
                   : `${formatNumber(remainingCalories ?? 0)} kcal remaining`}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </GlassCardContent>
+        </GlassCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Macros</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+        <GlassCard>
+          <GlassCardHeader>
+            <GlassCardTitle>Macros</GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent className="space-y-2 text-sm">
             <MacroRow
               label="Protein"
               consumed={totals.protein}
@@ -596,14 +602,14 @@ export default function TodayClient({
               consumed={totals.fat}
               target={summary.targetMacros.fat}
             />
-          </CardContent>
-        </Card>
+          </GlassCardContent>
+        </GlassCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Weight & BMI</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <GlassCard>
+          <GlassCardHeader>
+            <GlassCardTitle>Weight & BMI</GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent className="space-y-3">
             {latestWeightKg && heightCm ? (
               <>
                 <div className="space-y-2">
@@ -638,16 +644,16 @@ export default function TodayClient({
                 </Link>
               </>
             )}
-          </CardContent>
-        </Card>
+          </GlassCardContent>
+        </GlassCard>
       </section>
 
       <section className="grid gap-3 sm:gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Daily target override</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <GlassCard>
+          <GlassCardHeader>
+            <GlassCardTitle>Daily target override</GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent className="space-y-3">
             <div className="grid gap-2">
               <Label htmlFor="target-calories">Calories</Label>
               <div className="flex items-center gap-2">
@@ -677,14 +683,14 @@ export default function TodayClient({
             <Button onClick={() => handleTargetSave()} disabled={isSavingTarget}>
               {isSavingTarget ? "Saving..." : "Save target"}
             </Button>
-          </CardContent>
-        </Card>
+          </GlassCardContent>
+        </GlassCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Notes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <GlassCard>
+          <GlassCardHeader>
+            <GlassCardTitle>Notes</GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent className="space-y-3">
             <Textarea
               rows={5}
               value={notes}
@@ -694,8 +700,8 @@ export default function TodayClient({
             <Button onClick={handleNotesSave} disabled={isSavingNotes}>
               {isSavingNotes ? "Saving..." : "Save notes"}
             </Button>
-          </CardContent>
-        </Card>
+          </GlassCardContent>
+        </GlassCard>
       </section>
 
       <Separator />
