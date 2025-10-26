@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Toaster } from "@/components/ui/sonner";
 import { UserMenu } from "@/components/user-menu";
-import { AuroraBackground } from "@/components/aurora-background";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const supabase = await createSupabaseServerClient();
@@ -19,9 +18,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   console.log("[AppLayout] Rendering with user:", user.email);
 
   return (
-    <AuroraBackground>
-      <div className="min-h-screen flex flex-col">
-        <header className="sticky top-0 z-50 w-full border-b backdrop-blur-lg bg-white/30 dark:bg-black/20 supports-[backdrop-filter]:bg-white/20 shadow-sm">
+    <div className="min-h-screen flex flex-col">
+        <header className="sticky top-0 z-50 w-full border-b bg-white dark:bg-black shadow-sm">
         <div className="container flex h-14 max-w-screen-2xl items-center justify-between px-4">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
@@ -55,7 +53,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
       <Toaster richColors />
-      </div>
-    </AuroraBackground>
+    </div>
   );
 }
