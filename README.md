@@ -61,9 +61,24 @@ Migrations live in `supabase/migrations/`. Baseline created: `20251019_000001_le
 
 - Manifest, icons, Workbox service worker, offline queue using IndexedDB (sync_events)
 
-## MCP Server
+## MCP Server ✅
 
-MCP server plan and milestones: see `docs/mcp-plan.md`.
+**Status:** Deployed and working!
+
+The Lean Log MCP server exposes nutrition tracking capabilities to AI assistants (Claude, ChatGPT, etc.) via the Model Context Protocol.
+
+- **Setup Guide:** See [CURSOR_SETUP.md](./CURSOR_SETUP.md) for quick Cursor configuration
+- **Full Documentation:** See [docs/cursor-mcp-setup.md](./docs/cursor-mcp-setup.md)
+- **Implementation Plan:** See [docs/mcp-plan.md](./docs/mcp-plan.md)
+- **API Management:** [https://lean-log.tarequm.com/settings/api-keys](https://lean-log.tarequm.com/settings/api-keys)
+
+**Endpoint:** `POST https://lean-log.tarequm.com/api/mcp/messages`
+
+**Available Methods:**
+- Weight tracking: `weight.getLatest`, `weight.create`, `weight.listRecent`, `weight.delete`
+- Meals: `meals.list`
+- Daily entries: `entries.getOrCreateDayLog`, `entries.add`, `entries.update`, `entries.delete`, `entries.bulkAdd`
+- History: `history.daySummaries`
 
 ## Roadmap
 
