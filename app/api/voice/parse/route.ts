@@ -1,29 +1,66 @@
-import { authenticateMcpRequest } from "@/lib/mcp/auth";
-import { z } from "zod";
-
-const MealSchema = z.object({
-  meal_type: z.enum(["breakfast", "lunch", "dinner", "snack"]),
-  items: z.array(z.string().min(1)).min(1).max(8),
-  calories_kcal: z.number().int().min(0).max(4000),
-  time_iso: z.string().datetime().optional(),
-  notes: z.string().optional(),
-});
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { groqClient } from "@/lib/groq-client";
+import {
+  ParsedMealSchema,
+  GROQ_MEAL_PARSING_JSON_SCHEMA,
+} from "@/lib/voice-schemas";
+import {
+  MEAL_PARSING_SYSTEM_PROMPT,
+  MEAL_PARSING_USER_PROMPT_TEMPLATE,
+} from "@/lib/voice-prompts";
 
 export async function POST(request: Request) {
-  try {
-    await authenticateMcpRequest(request);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unauthorized";
-    return new Response(msg, { status: 401 });
+  // Use session authentication instead of MCP API keys
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const body = await request.json().catch(() => ({}));
-  // Expect { text: string } for now (plain text from ASR). In the future, we’ll call an LLM here.
   const text = (body?.text as string | undefined)?.trim();
-  if (!text) return json({ ok: false, error: "text is required" }, 400);
 
-  // Scaffold: return 501 until wired to an LLM with structured output.
-  return json({ ok: false, error: "Parser not implemented" }, 501);
+  if (!text) {
+    return json({ ok: false, error: "text is required" }, 400);
+  }
+
+  try {
+    const completion = await groqClient.chat.completions.create({
+      model: "openai/gpt-oss-20b", // Production model, supports json_schema, 13x cheaper than Kimi
+      messages: [
+        {
+          role: "system",
+          content: MEAL_PARSING_SYSTEM_PROMPT,
+        },
+        {
+          role: "user",
+          content: MEAL_PARSING_USER_PROMPT_TEMPLATE(text),
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: GROQ_MEAL_PARSING_JSON_SCHEMA,
+      },
+      temperature: 0.3,
+    });
+
+    const parsed = JSON.parse(completion.choices[0].message.content || "{}");
+    const validated = ParsedMealSchema.parse(parsed);
+
+    return json({ ok: true, data: validated });
+  } catch (error) {
+    console.error("Parse error:", error);
+    return json(
+      {
+        ok: false,
+        error: error instanceof Error ? error.message : "Failed to parse meal data",
+      },
+      500
+    );
+  }
 }
 
 function json(payload: unknown, status = 200) {
@@ -32,5 +69,3 @@ function json(payload: unknown, status = 200) {
     headers: { "content-type": "application/json" },
   });
 }
-
-

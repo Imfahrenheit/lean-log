@@ -65,6 +65,9 @@ import {
   TrashIcon,
   CopyIcon,
 } from "@radix-ui/react-icons";
+import { Mic } from "lucide-react";
+import { VoiceInputModal } from "./components/voice-input-modal";
+import type { MealEntry as VoiceMealEntry } from "@/lib/voice-schemas";
 
 type EntryFormState = {
   id?: string;
@@ -224,6 +227,7 @@ export default function TodayClient({
   );
   const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [duplicateDate, setDuplicateDate] = useState<string>("");
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
   const [isSavingEntry, startSavingEntry] = useTransition();
   const [isSavingTarget, startSavingTarget] = useTransition();
@@ -477,6 +481,28 @@ export default function TodayClient({
     });
   }
 
+  async function handleVoiceCommit(entries: VoiceMealEntry[]) {
+    const previous = incomingEntries;
+    try {
+      for (const entry of entries) {
+        const created = await addMealEntry({
+          dayLogId: dayLog.id,
+          mealId: null,
+          name: entry.name,
+          protein_g: entry.protein_g,
+          carbs_g: entry.carbs_g,
+          fat_g: entry.fat_g,
+          calories_override: entry.calories_override ?? null,
+        });
+        setEntries((prev) => sortEntries([...prev, created], mealOrder));
+      }
+    } catch (error: unknown) {
+      setEntries(previous);
+      toast.error(getErrorMessage(error, "Failed to save voice entries"));
+      throw error;
+    }
+  }
+
   const remainingCalories = effectiveTargetCalories
     ? effectiveTargetCalories - totals.calories
     : null;
@@ -495,6 +521,14 @@ export default function TodayClient({
             onChange={(event) => handleDateChange(event.target.value)}
             className="h-10"
           />
+          <Button
+            variant="outline"
+            onClick={() => setVoiceModalOpen(true)}
+            className="h-10"
+          >
+            <Mic className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Voice</span>
+          </Button>
           <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="h-10">
@@ -760,6 +794,12 @@ export default function TodayClient({
         onClose={closeEntryModal}
         onSubmit={persistEntry}
         saving={isSavingEntry}
+      />
+
+      <VoiceInputModal
+        open={voiceModalOpen}
+        onOpenChange={setVoiceModalOpen}
+        onCommit={handleVoiceCommit}
       />
     </div>
   );

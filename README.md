@@ -12,6 +12,7 @@ Create `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://clhzdufqtogoetnfjxgv.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 SUPABASE_SECRET_KEY=sb_secret_...
+GROQ_API_KEY=gsk_...  # For voice input feature (optional)
 ```
 
 ### Supabase CLI workflow
@@ -80,6 +81,30 @@ The Lean Log MCP server exposes nutrition tracking capabilities to AI assistants
 - Daily entries: `entries.getOrCreateDayLog`, `entries.add`, `entries.update`, `entries.delete`, `entries.bulkAdd`
 - History: `history.daySummaries`
 
+## Voice Input 🎙️ NEW!
+
+**Status:** Implemented and ready to test!
+
+Voice-to-text meal logging using browser-native Web Speech API + Groq LLM for smart parsing.
+
+- **Quick Start:** See [VOICE_FEATURE_SUMMARY.md](./VOICE_FEATURE_SUMMARY.md)
+- **How it works:** Speak → Transcript → AI Parse → Review → Save
+- **Cost:** FREE (Web Speech API + Groq free tier)
+- **Browser Support:** Chrome, Edge, Safari (mobile & desktop)
+
+**Setup:**
+```bash
+# Add to .env.local
+GROQ_API_KEY=gsk_your_key_here  # Get from https://console.groq.com/keys
+```
+
+**Features:**
+- 🎤 Browser-native speech recognition (instant, no API calls)
+- 🤖 Smart macro estimation for common foods
+- ✅ Confidence scores for AI-parsed data
+- ✏️ Editable transcripts before parsing
+- 📱 Mobile-optimized UI
+
 ## Roadmap
 
 ### Milestone 1 – Auth & Profile ✅ DONE
@@ -104,6 +129,7 @@ The Lean Log MCP server exposes nutrition tracking capabilities to AI assistants
 - [x] Quick add entries (unassigned to meals)
 - [x] Daily target override and notes
 - [x] Real-time macro tracking with progress bars
+- [x] **Voice input for meal logging** 🎙️
 
 ### Milestone 4 – Mobile UI Optimization (IN PROGRESS)
 
