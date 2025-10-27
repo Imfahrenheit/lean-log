@@ -13,8 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Mic, MicOff, Loader2, CheckCircle2 } from "lucide-react";
+import { Mic, MicOff, Loader2, CheckCircle2, Pencil } from "lucide-react";
 import type { MealEntry } from "@/lib/voice-schemas";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 
@@ -62,9 +63,12 @@ export function VoiceInputModal({
   onOpenChange,
   onCommit,
 }: VoiceInputModalProps) {
-  const [step, setStep] = useState<"record" | "confirm">("record");
+  const [step, setStep] = useState<"record" | "confirm" | "edit">("record");
   const [editedTranscript, setEditedTranscript] = useState("");
   const [parsedEntries, setParsedEntries] = useState<MealEntry[]>([]);
+  const [lastParsedText, setLastParsedText] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<MealEntry | null>(null);
   const [isParsing, startParsing] = useTransition();
   const [isCommitting, startCommitting] = useTransition();
 
@@ -82,6 +86,7 @@ export function VoiceInputModal({
   const handleStartRecording = () => {
     reset();
     setParsedEntries([]);
+    setLastParsedText("");
     setEditedTranscript("");
     setStep("record");
     startListening();
@@ -91,6 +96,13 @@ export function VoiceInputModal({
     const textToUse = editedTranscript || transcript;
     if (!textToUse.trim()) {
       toast.error("No transcript to parse");
+      return;
+    }
+
+    // Check if text hasn't changed since last parse
+    if (textToUse === lastParsedText && parsedEntries.length > 0) {
+      // Reuse cached results without calling AI
+      setStep("confirm");
       return;
     }
 
@@ -111,6 +123,7 @@ export function VoiceInputModal({
         }
 
         setParsedEntries(result.data.entries);
+        setLastParsedText(textToUse);
         setStep("confirm");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Parse failed");
@@ -134,10 +147,38 @@ export function VoiceInputModal({
     });
   };
 
+  const handleEditEntry = (index: number) => {
+    setEditingIndex(index);
+    setEditForm({ ...parsedEntries[index] });
+    setStep("edit");
+  };
+
+  const handleSaveEdit = () => {
+    if (editingIndex !== null && editForm) {
+      const updated = [...parsedEntries];
+      updated[editingIndex] = editForm;
+      setParsedEntries(updated);
+      setEditingIndex(null);
+      setEditForm(null);
+      setStep("confirm");
+    }
+  };
+
+  const handleDeleteEntry = (index: number) => {
+    const updated = parsedEntries.filter((_, i) => i !== index);
+    setParsedEntries(updated);
+    if (updated.length === 0) {
+      setStep("record");
+    }
+  };
+
   const handleClose = () => {
     reset();
     setEditedTranscript("");
     setParsedEntries([]);
+    setLastParsedText("");
+    setEditingIndex(null);
+    setEditForm(null);
     setStep("record");
     onOpenChange(false);
   };
@@ -168,10 +209,12 @@ export function VoiceInputModal({
           <DialogTitle className="text-lg sm:text-xl">
             {step === "record" && "Voice Input"}
             {step === "confirm" && "Confirm Meal Entries"}
+            {step === "edit" && "Edit Meal Entry"}
           </DialogTitle>
           <DialogDescription className="text-sm">
             {step === "record" && "Click the microphone to start recording"}
-            {step === "confirm" && "Review parsed meal data before saving"}
+            {step === "confirm" && "Review and edit before saving"}
+            {step === "edit" && "Modify the meal details as needed"}
           </DialogDescription>
         </DialogHeader>
 
@@ -258,9 +301,29 @@ export function VoiceInputModal({
               <div key={index} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">{entry.name}</h4>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <CheckCircle2 className="h-3 w-3" />
-                    {Math.round(entry.confidence * 100)}% confident
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <CheckCircle2 className="h-3 w-3" />
+                      {Math.round(entry.confidence * 100)}% confident
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEditEntry(index)}
+                        className="h-7 w-7 p-0"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteEntry(index)}
+                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      >
+                        ×
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-sm">
@@ -286,8 +349,112 @@ export function VoiceInputModal({
                     </p>
                   </div>
                 </div>
+                {entry.meal_type && (
+                  <div className="text-xs text-muted-foreground">
+                    Meal: {entry.meal_type}
+                  </div>
+                )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Step 3: Edit Entry */}
+        {step === "edit" && editForm && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Food Name</Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="e.g., Chicken breast"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="edit-protein">Protein (g)</Label>
+                <Input
+                  id="edit-protein"
+                  type="number"
+                  inputMode="numeric"
+                  value={editForm.protein_g}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      protein_g: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-carbs">Carbs (g)</Label>
+                <Input
+                  id="edit-carbs"
+                  type="number"
+                  inputMode="numeric"
+                  value={editForm.carbs_g}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      carbs_g: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-fat">Fat (g)</Label>
+                <Input
+                  id="edit-fat"
+                  type="number"
+                  inputMode="numeric"
+                  value={editForm.fat_g}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      fat_g: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-calories">Calories (optional)</Label>
+                <Input
+                  id="edit-calories"
+                  type="number"
+                  inputMode="numeric"
+                  value={editForm.calories_override ?? ""}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      calories_override: e.target.value
+                        ? parseFloat(e.target.value)
+                        : null,
+                    })
+                  }
+                  placeholder="Auto"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-meal-type">Meal Type (optional)</Label>
+              <Input
+                id="edit-meal-type"
+                value={editForm.meal_type ?? ""}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    meal_type: e.target.value || null,
+                  })
+                }
+                placeholder="e.g., breakfast, lunch, meal-1"
+              />
+            </div>
           </div>
         )}
 
@@ -317,6 +484,25 @@ export function VoiceInputModal({
                 {isCommitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save {parsedEntries.length}{" "}
                 {parsedEntries.length === 1 ? "Entry" : "Entries"}
+              </Button>
+            </>
+          )}
+
+          {step === "edit" && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingIndex(null);
+                  setEditForm(null);
+                  setStep("confirm");
+                }}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit} className="w-full sm:w-auto">
+                Save Changes
               </Button>
             </>
           )}

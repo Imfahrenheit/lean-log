@@ -484,10 +484,20 @@ export default function TodayClient({
   async function handleVoiceCommit(entries: VoiceMealEntry[]) {
     const previous = incomingEntries;
     try {
+      // Create a map of meal names to IDs (case-insensitive)
+      const mealMap = new Map(
+        meals.map((m) => [m.name.toLowerCase(), m.id])
+      );
+
       for (const entry of entries) {
+        // Try to find matching meal by name (case-insensitive)
+        const mealId = entry.meal_type
+          ? (mealMap.get(entry.meal_type.toLowerCase()) ?? null)
+          : null;
+
         const created = await addMealEntry({
           dayLogId: dayLog.id,
-          mealId: null,
+          mealId,
           name: entry.name,
           protein_g: entry.protein_g,
           carbs_g: entry.carbs_g,
@@ -508,7 +518,7 @@ export default function TodayClient({
     : null;
 
   return (
-    <div className="max-w-5xl mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6">
+    <div className="max-w-5xl mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6 pb-24 sm:pb-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl sm:text-2xl font-semibold">Today</h2>
@@ -524,10 +534,10 @@ export default function TodayClient({
           <Button
             variant="outline"
             onClick={() => setVoiceModalOpen(true)}
-            className="h-10"
+            className="h-10 sm:flex hidden"
           >
             <Mic className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Voice</span>
+            Voice Input
           </Button>
           <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
             <DialogTrigger asChild>
@@ -801,6 +811,24 @@ export default function TodayClient({
         onOpenChange={setVoiceModalOpen}
         onCommit={handleVoiceCommit}
       />
+
+      {/* Floating Action Button for Voice Input */}
+      <button
+        onClick={() => setVoiceModalOpen(true)}
+        className="fixed bottom-20 right-4 sm:bottom-8 sm:right-8 z-50 
+                   w-14 h-14 sm:w-16 sm:h-16 
+                   bg-gradient-to-br from-blue-500 to-purple-600 
+                   hover:from-blue-600 hover:to-purple-700
+                   text-white rounded-full shadow-lg hover:shadow-xl 
+                   transition-all duration-300 ease-in-out
+                   flex items-center justify-center
+                   active:scale-95 hover:scale-110
+                   sm:flex"
+        aria-label="Open voice input"
+      >
+        <Mic className="w-6 h-6 sm:w-7 sm:h-7" />
+        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+      </button>
     </div>
   );
 }
