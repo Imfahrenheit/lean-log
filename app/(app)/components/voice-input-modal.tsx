@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Mic, MicOff, Loader2, CheckCircle2, Pencil } from "lucide-react";
 import type { MealEntry } from "@/lib/voice-schemas";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { cn } from "@/lib/utils";
 
 type VoiceInputModalProps = {
   open: boolean;
@@ -221,6 +222,29 @@ export function VoiceInputModal({
         {/* Step 1: Recording */}
         {step === "record" && (
           <div className="space-y-4">
+            {/* Quick Tips */}
+            {!transcript && !isListening && (
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  💡 Tips for best results:
+                </p>
+                <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                  <li>
+                    <strong>Provide macros:</strong> &quot;Lunch: 600 cal, 45g protein, 60g carbs, 20g fat&quot;
+                  </li>
+                  <li>
+                    <strong>Combine items:</strong> &quot;Chicken and rice&quot; creates 1 entry (not 2)
+                  </li>
+                  <li>
+                    <strong>Use meal names:</strong> &quot;breakfast&quot;, &quot;meal-1&quot;, &quot;pre-workout&quot;
+                  </li>
+                  <li>
+                    <strong>Edit if needed:</strong> Check and fix entries before saving
+                  </li>
+                </ul>
+              </div>
+            )}
+
             {/* Audio Visualizer */}
             <AudioVisualizer audioLevel={audioLevel} isListening={isListening} />
 
@@ -297,65 +321,92 @@ export function VoiceInputModal({
         {/* Step 2: Confirm Parsed Data */}
         {step === "confirm" && (
           <div className="space-y-4">
-            {parsedEntries.map((entry, index) => (
-              <div key={index} className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">{entry.name}</h4>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CheckCircle2 className="h-3 w-3" />
-                      {Math.round(entry.confidence * 100)}% confident
+            {parsedEntries.map((entry, index) => {
+              const isLowConfidence = entry.confidence < 0.5;
+              const needsUserInput = entry.protein_g === 0 && entry.carbs_g === 0 && entry.fat_g === 0;
+              
+              return (
+                <div 
+                  key={index} 
+                  className={cn(
+                    "border rounded-lg p-4 space-y-3",
+                    (isLowConfidence || needsUserInput) && "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">{entry.name}</h4>
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "flex items-center gap-1 text-xs",
+                        isLowConfidence ? "text-yellow-600 dark:text-yellow-500" : "text-muted-foreground"
+                      )}>
+                        <CheckCircle2 className="h-3 w-3" />
+                        {Math.round(entry.confidence * 100)}% confident
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditEntry(index)}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteEntry(index)}
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        >
+                          ×
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEditEntry(index)}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteEntry(index)}
-                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                      >
-                        ×
-                      </Button>
+                  </div>
+                  
+                  {needsUserInput && (
+                    <div className="text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded">
+                      ⚠️ Please click edit to add accurate macros
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-4 gap-2 text-sm">
+                    <div>
+                      <Label className="text-xs">Protein</Label>
+                      <p className={needsUserInput ? "text-muted-foreground" : ""}>
+                        {entry.protein_g}g
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Carbs</Label>
+                      <p className={needsUserInput ? "text-muted-foreground" : ""}>
+                        {entry.carbs_g}g
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Fat</Label>
+                      <p className={needsUserInput ? "text-muted-foreground" : ""}>
+                        {entry.fat_g}g
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Calories</Label>
+                      <p className={needsUserInput ? "text-muted-foreground" : ""}>
+                        {entry.calories_override ??
+                          Math.round(
+                            entry.protein_g * 4 + entry.carbs_g * 4 + entry.fat_g * 9
+                          )}
+                      </p>
                     </div>
                   </div>
+                  {entry.meal_type && (
+                    <div className="text-xs text-muted-foreground">
+                      Meal: {entry.meal_type}
+                    </div>
+                  )}
                 </div>
-                <div className="grid grid-cols-4 gap-2 text-sm">
-                  <div>
-                    <Label className="text-xs">Protein</Label>
-                    <p>{entry.protein_g}g</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Carbs</Label>
-                    <p>{entry.carbs_g}g</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Fat</Label>
-                    <p>{entry.fat_g}g</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Calories</Label>
-                    <p>
-                      {entry.calories_override ??
-                        Math.round(
-                          entry.protein_g * 4 + entry.carbs_g * 4 + entry.fat_g * 9
-                        )}
-                    </p>
-                  </div>
-                </div>
-                {entry.meal_type && (
-                  <div className="text-xs text-muted-foreground">
-                    Meal: {entry.meal_type}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

@@ -83,12 +83,13 @@ The Lean Log MCP server exposes nutrition tracking capabilities to AI assistants
 
 ## Voice Input 🎙️ NEW!
 
-**Status:** Implemented and ready to test!
+**Status:** Implemented and ready to use!
 
 Voice-to-text meal logging using browser-native Web Speech API + Groq LLM for smart parsing.
 
-- **Quick Start:** See [VOICE_FEATURE_SUMMARY.md](./VOICE_FEATURE_SUMMARY.md)
-- **How it works:** Speak → Transcript → AI Parse → Review → Save
+- **User Guide:** See [VOICE_INPUT_GUIDE.md](./VOICE_INPUT_GUIDE.md) for examples and best practices
+- **Technical Details:** See [VOICE_FEATURE_SUMMARY.md](./VOICE_FEATURE_SUMMARY.md)
+- **How it works:** Speak → Transcript → AI Parse → Review/Edit → Save
 - **Cost:** FREE (Web Speech API + Groq free tier)
 - **Browser Support:** Chrome, Edge, Safari (mobile & desktop)
 
@@ -98,12 +99,16 @@ Voice-to-text meal logging using browser-native Web Speech API + Groq LLM for sm
 GROQ_API_KEY=gsk_your_key_here  # Get from https://console.groq.com/keys
 ```
 
-**Features:**
+**Key Features:**
 - 🎤 Browser-native speech recognition (instant, no API calls)
-- 🤖 Smart macro estimation for common foods
-- ✅ Confidence scores for AI-parsed data
-- ✏️ Editable transcripts before parsing
-- 📱 Mobile-optimized UI
+- 🤖 Smart parsing with user macro prioritization
+- ⚠️ Visual warnings for low-confidence entries
+- ✏️ Full edit modal before saving
+- 📊 Combines multiple foods into single entries
+- 🎯 Maps to your custom meal names (breakfast, meal-1, etc.)
+- 📱 Mobile-optimized with floating action button
+
+**Best Practice:** Always provide your calculated macros for accurate tracking!
 
 ## Roadmap
 
