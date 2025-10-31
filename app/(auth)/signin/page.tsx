@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
+import { checkUserExists, validateInviteCode } from "./actions";
 
 function SignInContent() {
   const router = useRouter();
@@ -11,6 +12,7 @@ function SignInContent() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +43,35 @@ function SignInContent() {
     setError(null);
     setMessage(null);
 
+    // Check if user already exists
+    const userExists = await checkUserExists(email);
+    
+    // If new user, validate invite code
+    if (!userExists) {
+      if (!inviteCode || inviteCode.trim().length === 0) {
+        setLoading(false);
+        setError("An invite code is required for new users. Please enter your invite code.");
+        return;
+      }
+
+      const validation = await validateInviteCode(inviteCode.trim());
+      if (!validation.valid) {
+        setLoading(false);
+        setError(validation.error || "Invalid invite code");
+        return;
+      }
+    }
+
+    // Build redirect URL with invite code in state if it's a new user
+    const redirectUrl = new URL(`${window.location.origin}/callback`);
+    if (!userExists && inviteCode) {
+      redirectUrl.searchParams.set("invite_code", inviteCode.trim());
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/callback`,
+        emailRedirectTo: redirectUrl.toString(),
       },
     });
 
@@ -81,6 +108,22 @@ function SignInContent() {
           placeholder="you@example.com"
           required
         />
+        <div>
+          <label className="block text-sm font-medium">
+            Invite Code <span className="text-xs text-gray-500">(required for new users)</span>
+          </label>
+          <input
+            type="text"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            className="w-full rounded border px-3 py-2"
+            placeholder="Enter invite code"
+            aria-describedby="invite-help"
+          />
+          <p id="invite-help" className="mt-1 text-xs text-gray-500">
+            Existing users can leave this blank. New users must provide a valid invite code.
+          </p>
+        </div>
         <button
           type="submit"
           disabled={loading}

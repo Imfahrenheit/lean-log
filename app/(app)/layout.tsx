@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Toaster } from "@/components/ui/sonner";
 import { UserMenu } from "@/components/user-menu";
+import { getCurrentUserAdminStatus } from "@/lib/auth/admin";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const supabase = await createSupabaseServerClient();
@@ -14,6 +15,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!user) {
     redirect("/signin");
   }
+
+  const isAdmin = await getCurrentUserAdminStatus();
 
   console.log("[AppLayout] Rendering with user:", user.email);
 
@@ -44,6 +47,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               <Link href="/settings/api-keys" className="text-muted-foreground hover:text-foreground transition-colors">
                 API Keys
               </Link>
+              {isAdmin && (
+                <Link href="/settings/invites" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Invites
+                </Link>
+              )}
             </nav>
           </div>
           <UserMenu userEmail={user.email ?? "User"} />

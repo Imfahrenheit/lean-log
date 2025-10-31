@@ -159,6 +159,42 @@ export type Database = {
         }
         Relationships: []
       }
+      invites: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          revoked_at: string | null
+          updated_at: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       meal_entries: {
         Row: {
           calories_calculated: number | null
@@ -303,6 +339,7 @@ export type Database = {
           height_cm: number | null
           id: string
           inserted_at: string
+          is_admin: boolean
           sex: Database["public"]["Enums"]["sex"] | null
           suggested_calories: number | null
           target_calories: number | null
@@ -317,6 +354,7 @@ export type Database = {
           height_cm?: number | null
           id: string
           inserted_at?: string
+          is_admin?: boolean
           sex?: Database["public"]["Enums"]["sex"] | null
           suggested_calories?: number | null
           target_calories?: number | null
@@ -331,6 +369,7 @@ export type Database = {
           height_cm?: number | null
           id?: string
           inserted_at?: string
+          is_admin?: boolean
           sex?: Database["public"]["Enums"]["sex"] | null
           suggested_calories?: number | null
           target_calories?: number | null
@@ -430,7 +469,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      mark_invite_used: {
+        Args: { invite_code: string; user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       sex: "male" | "female"
