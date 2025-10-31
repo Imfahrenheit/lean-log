@@ -9,10 +9,22 @@ import { toast } from "sonner";
 
 export function InvitesClient({ initialInvites }: { initialInvites: InvitePublic[] }) {
   const [invites, setInvites] = useState<InvitePublic[]>(initialInvites);
+  const [email, setEmail] = useState<string>("");
   const [expiresInDays, setExpiresInDays] = useState<string>("");
   const [isPending, startTransition] = useTransition();
 
   function onCreate() {
+    if (!email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     const days = expiresInDays.trim() ? parseInt(expiresInDays.trim(), 10) : undefined;
     
     if (expiresInDays.trim() && (isNaN(days!) || days! <= 0)) {
@@ -22,10 +34,11 @@ export function InvitesClient({ initialInvites }: { initialInvites: InvitePublic
 
     startTransition(async () => {
       try {
-        const newInvite = await generateInvite(days);
+        const newInvite = await generateInvite(trimmedEmail, days);
         setInvites((prev) => [newInvite, ...prev]);
+        setEmail("");
         setExpiresInDays("");
-        toast.success(`Invite code generated: ${newInvite.code}`);
+        toast.success(`Invite created for ${newInvite.email}`);
       } catch (e) {
         toast.error((e as Error).message);
       }
@@ -50,9 +63,9 @@ export function InvitesClient({ initialInvites }: { initialInvites: InvitePublic
     });
   }
 
-  function copyCode(code: string) {
-    navigator.clipboard.writeText(code).then(() => {
-      toast.success("Invite code copied to clipboard");
+  function copyEmail(email: string) {
+    navigator.clipboard.writeText(email).then(() => {
+      toast.success("Email copied to clipboard");
     });
   }
 
@@ -101,18 +114,30 @@ export function InvitesClient({ initialInvites }: { initialInvites: InvitePublic
       <Separator />
 
       {/* Generate new invite */}
-      <div className="flex gap-2 items-end">
-        <div className="flex-1">
-          <label className="block text-sm font-medium mb-1">Expires in (days, optional)</label>
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">Email address</label>
           <Input
-            type="number"
-            placeholder="Leave blank for no expiration"
-            value={expiresInDays}
-            onChange={(e) => setExpiresInDays(e.target.value)}
-            min="1"
+            type="email"
+            placeholder="user@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
         </div>
-        <Button onClick={onCreate} disabled={isPending}>Generate Invite</Button>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium mb-1">Expires in (days, optional)</label>
+            <Input
+              type="number"
+              placeholder="Leave blank for no expiration"
+              value={expiresInDays}
+              onChange={(e) => setExpiresInDays(e.target.value)}
+              min="1"
+            />
+          </div>
+          <Button onClick={onCreate} disabled={isPending || !email.trim()}>Create Invite</Button>
+        </div>
       </div>
 
       <Separator />
@@ -129,7 +154,7 @@ export function InvitesClient({ initialInvites }: { initialInvites: InvitePublic
                 <li key={inv.id} className="flex items-center justify-between rounded-md border p-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="text-sm font-mono font-medium">{inv.code}</div>
+                      <div className="text-sm font-medium">{inv.email}</div>
                       <span className={`text-xs font-medium ${status.className}`}>
                         {status.label}
                       </span>
@@ -144,9 +169,9 @@ export function InvitesClient({ initialInvites }: { initialInvites: InvitePublic
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyCode(inv.code)}
+                      onClick={() => copyEmail(inv.email)}
                     >
-                      Copy
+                      Copy Email
                     </Button>
                     {!inv.revoked_at && !inv.used_at && (
                       <Button

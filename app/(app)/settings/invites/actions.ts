@@ -2,11 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { checkAdmin } from "@/lib/auth/admin";
 
 export type InvitePublic = {
   id: string;
-  code: string;
+  email: string;
   created_by: string;
   used_by: string | null;
   used_at: string | null;
@@ -14,19 +15,6 @@ export type InvitePublic = {
   revoked_at: string | null;
   created_at: string;
 };
-
-/**
- * Generate a secure random invite code
- */
-function generateInviteCode(): string {
-  // Generate a URL-safe random string (8-10 characters)
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed similar looking chars (I, O, 0, 1)
-  let code = "";
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
 
 export async function listInvites(): Promise<InvitePublic[]> {
   // Check admin status - only admins can list invites
@@ -37,14 +25,14 @@ export async function listInvites(): Promise<InvitePublic[]> {
   // Admins can see all invites (not just their own)
   const { data, error } = await supabase
     .from("invites")
-    .select("id, code, created_by, used_by, used_at, expires_at, revoked_at, created_at")
+    .select("id, email, created_by, used_by, used_at, expires_at, revoked_at, created_at")
     .order("created_at", { ascending: false });
   
   if (error) throw error;
   return (data ?? []) as InvitePublic[];
 }
 
-export async function generateInvite(expiresInDays?: number): Promise<InvitePublic> {
+export async function generateInvite(email: string, expiresInDays?: number): Promise<InvitePublic> {
   // Check admin status - only admins can generate invites
   await checkAdmin();
 
@@ -54,30 +42,31 @@ export async function generateInvite(expiresInDays?: number): Promise<InvitePubl
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Generate a unique code (retry if collision)
-  let code: string;
-  let attempts = 0;
-  const maxAttempts = 10;
+  // Validate email
+  const trimmedEmail = email.trim().toLowerCase();
+  if (!trimmedEmail || !trimmedEmail.includes("@")) {
+    throw new Error("Invalid email address");
+  }
 
-  do {
-    code = generateInviteCode();
-    attempts++;
+  // Check if user already exists (using service client for admin access)
+  const serviceClient = createSupabaseServiceClient();
+  const { data: existingUser } = await serviceClient.auth.admin.listUsers();
+  if (existingUser?.users.some((u) => u.email?.toLowerCase() === trimmedEmail)) {
+    throw new Error("A user with this email already exists");
+  }
 
-    // Check if code already exists
-    const { data: existing } = await supabase
-      .from("invites")
-      .select("id")
-      .eq("code", code)
-      .single();
+  // Check if invite already exists for this email (active one)
+  const { data: existingInvite } = await supabase
+    .from("invites")
+    .select("id")
+    .ilike("email", trimmedEmail)
+    .is("used_at", null)
+    .is("revoked_at", null)
+    .maybeSingle();
 
-    if (!existing) {
-      break; // Code is unique
-    }
-
-    if (attempts >= maxAttempts) {
-      throw new Error("Failed to generate unique invite code after multiple attempts");
-    }
-  } while (attempts < maxAttempts);
+  if (existingInvite) {
+    throw new Error("An active invite already exists for this email");
+  }
 
   // Calculate expiration if provided
   const expiresAt = expiresInDays
@@ -87,14 +76,20 @@ export async function generateInvite(expiresInDays?: number): Promise<InvitePubl
   const { data, error } = await supabase
     .from("invites")
     .insert({
-      code,
+      email: trimmedEmail,
       created_by: user.id,
       expires_at: expiresAt,
     })
-    .select("id, code, created_by, used_by, used_at, expires_at, revoked_at, created_at")
+    .select("id, email, created_by, used_by, used_at, expires_at, revoked_at, created_at")
     .single();
 
-  if (error) throw error;
+  if (error) {
+    // Handle unique constraint violation
+    if (error.code === "23505") {
+      throw new Error("An invite for this email already exists");
+    }
+    throw error;
+  }
 
   revalidatePath("/(app)/settings/invites");
   return data as InvitePublic;

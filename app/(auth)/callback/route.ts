@@ -5,7 +5,6 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const inviteCode = searchParams.get("invite_code");
   const next = searchParams.get("next") ?? "/";
 
   // Handle errors from Supabase
@@ -24,15 +23,13 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/signin?error=${error.message}`);
     }
 
-    // If this is a new user signup and an invite code was provided, mark it as used
-    if (data.user && inviteCode) {
-      // Check if this user was just created (by checking created_at time)
-      // We'll use the service client to call the database function
+    // If this is a new user signup, mark the invite as used by email
+    if (data.user && data.user.email) {
       const serviceClient = createSupabaseServiceClient();
       
-      // Call the database function to mark the invite as used
-      const { error: inviteError } = await serviceClient.rpc("mark_invite_used", {
-        invite_code: inviteCode,
+      // Call the database function to mark the invite as used by email
+      const { error: inviteError } = await serviceClient.rpc("mark_invite_used_by_email", {
+        invite_email: data.user.email.toLowerCase(),
         user_id: data.user.id,
       });
 

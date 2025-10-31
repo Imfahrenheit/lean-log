@@ -22,11 +22,11 @@ export default async function InvitesPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Manage invite codes</CardTitle>
+          <CardTitle>Manage invites</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Generate invite codes for new users to sign up. Invite codes are single-use and can optionally expire. Share codes securely with users you want to invite.
+            Invite users by email address. Invited users can sign up with their email - no code needed. Invites are single-use and can optionally expire.
           </p>
           <Separator className="my-4" />
           <InvitesClient initialInvites={invites} />

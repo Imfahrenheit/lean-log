@@ -161,9 +161,9 @@ export type Database = {
       }
       invites: {
         Row: {
-          code: string
           created_at: string
           created_by: string
+          email: string
           expires_at: string | null
           id: string
           revoked_at: string | null
@@ -172,9 +172,9 @@ export type Database = {
           used_by: string | null
         }
         Insert: {
-          code: string
           created_at?: string
           created_by: string
+          email: string
           expires_at?: string | null
           id?: string
           revoked_at?: string | null
@@ -183,9 +183,9 @@ export type Database = {
           used_by?: string | null
         }
         Update: {
-          code?: string
           created_at?: string
           created_by?: string
+          email?: string
           expires_at?: string | null
           id?: string
           revoked_at?: string | null
@@ -469,8 +469,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      mark_invite_used: {
-        Args: { invite_code: string; user_id: string }
+      mark_invite_used_by_email: {
+        Args: { invite_email: string; user_id: string }
         Returns: boolean
       }
     }
