@@ -59,7 +59,7 @@ export async function generateInvite(email: string, expiresInDays?: number): Pro
   const { data: existingInvite } = await supabase
     .from("invites")
     .select("id")
-    .ilike("email", trimmedEmail)
+    .eq("email", trimmedEmail)
     .is("used_at", null)
     .is("revoked_at", null)
     .maybeSingle();

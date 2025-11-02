@@ -40,16 +40,19 @@ export async function validateInviteEmail(email: string): Promise<{
   // This allows anonymous users to validate invites
   const supabase = createSupabaseServiceClient();
   
+  // Use eq instead of ilike since emails are stored in lowercase
+  // Service client bypasses RLS, so we need to check validation conditions ourselves
   const { data, error } = await supabase
     .from("invites")
     .select("id, email, used_at, revoked_at, expires_at")
-    .ilike("email", trimmedEmail)
+    .eq("email", trimmedEmail)
     .maybeSingle();
 
   if (error || !data) {
     return { valid: false, error: "No invite found for this email address" };
   }
 
+  // Check validation conditions (since service client bypasses RLS)
   if (data.used_at) {
     return { valid: false, error: "This invite has already been used" };
   }
