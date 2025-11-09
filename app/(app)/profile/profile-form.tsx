@@ -4,7 +4,7 @@ import { useMemo, useTransition } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { calculateBmi, mifflinStJeorSuggestion, type Sex } from "@/lib/calculations";
+import { calculateBmi, mifflinStJeorSuggestion, ACTIVITY_FACTORS, type Sex } from "@/lib/calculations";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,8 +121,22 @@ export default function ProfileForm({ initialData }: { initialData: Partial<Form
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="activity_factor">Activity Factor</Label>
-              <Input id="activity_factor" type="number" step="0.05" {...form.register("activity_factor")} />
+              <Label htmlFor="activity_factor">Activity Level</Label>
+              <Select 
+                value={values.activity_factor?.toString() ?? "1.2"} 
+                onValueChange={(v) => form.setValue("activity_factor", parseFloat(v))}
+              >
+                <SelectTrigger id="activity_factor">
+                  <SelectValue placeholder="Select activity level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACTIVITY_FACTORS.map((factor) => (
+                    <SelectItem key={factor.value} value={factor.value.toString()}>
+                      {factor.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
