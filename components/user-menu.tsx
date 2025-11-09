@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   DropdownMenu,
@@ -12,14 +12,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ExitIcon, PersonIcon, GearIcon } from "@radix-ui/react-icons";
+import { ExitIcon, PersonIcon } from "@radix-ui/react-icons";
+import { Calendar, Scale, History, Utensils, Key, Mail } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface UserMenuProps {
   userEmail: string;
+  isAdmin?: boolean;
 }
 
-export function UserMenu({ userEmail }: UserMenuProps) {
+export function UserMenu({ userEmail, isAdmin = false }: UserMenuProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createSupabaseBrowserClient();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -34,6 +38,13 @@ export function UserMenu({ userEmail }: UserMenuProps) {
       setIsLoggingOut(false);
     }
   }
+
+  const isActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+    return pathname.startsWith(href);
+  };
 
   return (
     <DropdownMenu>
@@ -53,18 +64,69 @@ export function UserMenu({ userEmail }: UserMenuProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/profile")}>
+        
+        {/* Main Navigation */}
+        <DropdownMenuItem 
+          onClick={() => router.push("/")}
+          className={cn(isActive("/") && "bg-accent")}
+        >
+          <Calendar className="mr-2 h-4 w-4" />
+          Today
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => router.push("/weight")}
+          className={cn(isActive("/weight") && "bg-accent")}
+        >
+          <Scale className="mr-2 h-4 w-4" />
+          Weight
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => router.push("/history")}
+          className={cn(isActive("/history") && "bg-accent")}
+        >
+          <History className="mr-2 h-4 w-4" />
+          History
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => router.push("/profile")}
+          className={cn(isActive("/profile") && "bg-accent")}
+        >
           <PersonIcon className="mr-2 h-4 w-4" />
           Profile
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/settings/meals")}>
-          <GearIcon className="mr-2 h-4 w-4" />
-          Meals Settings
+        
+        <DropdownMenuSeparator />
+        
+        {/* Settings */}
+        <DropdownMenuItem 
+          onClick={() => router.push("/settings/meals")}
+          className={cn(isActive("/settings/meals") && "bg-accent")}
+        >
+          <Utensils className="mr-2 h-4 w-4" />
+          Meals
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/settings/api-keys")}>
-          <GearIcon className="mr-2 h-4 w-4" />
+        <DropdownMenuItem 
+          onClick={() => router.push("/settings/api-keys")}
+          className={cn(isActive("/settings/api-keys") && "bg-accent")}
+        >
+          <Key className="mr-2 h-4 w-4" />
           API Keys
         </DropdownMenuItem>
+        
+        {/* Admin Section */}
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => router.push("/settings/invites")}
+              className={cn(isActive("/settings/invites") && "bg-accent")}
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              Invites
+            </DropdownMenuItem>
+          </>
+        )}
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} disabled={isLoggingOut}>
           <ExitIcon className="mr-2 h-4 w-4" />

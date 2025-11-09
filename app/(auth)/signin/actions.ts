@@ -4,7 +4,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 /**
  * Check if a user with the given email already exists
- * Uses service client to query auth.users directly
+ * Uses service client to query auth.users directly via listUsers
  */
 export async function checkUserExists(email: string): Promise<boolean> {
   if (!email || email.trim().length === 0) {
@@ -15,25 +15,7 @@ export async function checkUserExists(email: string): Promise<boolean> {
   const supabase = createSupabaseServiceClient();
   
   try {
-    // Try getUserByEmail first (more efficient if available)
-    // @ts-expect-error - getUserByEmail may not be in types but exists in newer Supabase versions
-    if (supabase.auth.admin.getUserByEmail) {
-      const { data, error } = await supabase.auth.admin.getUserByEmail(trimmedEmail);
-      
-      if (error) {
-        // If user not found, error code is usually "user_not_found" or 404
-        if (error.message?.includes("not found") || error.status === 404) {
-          return false;
-        }
-        console.error("Error checking user existence:", error);
-        // Fail closed for security - if we can't check, assume user doesn't exist
-        return false;
-      }
-
-      return !!data?.user;
-    }
-
-    // Fallback to listUsers with pagination handling
+    // Use listUsers with pagination to find user by email
     let page = 1;
     const perPage = 1000; // Max per page
     
@@ -45,7 +27,7 @@ export async function checkUserExists(email: string): Promise<boolean> {
       
       if (error) {
         console.error("Error checking user existence:", error);
-        // Fail closed for security
+        // Fail closed for security - if we can't check, assume user doesn't exist
         return false;
       }
 

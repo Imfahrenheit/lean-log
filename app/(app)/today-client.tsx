@@ -586,24 +586,24 @@ export default function TodayClient({
         </div>
       </div>
 
-      <section className="grid gap-3 sm:gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Calories</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">{formatNumber(totals.calories)} kcal</span>
-              {effectiveTargetCalories ? (
-                <span className="text-muted-foreground">
+      {/* Summary Stats - Simplified without cards */}
+      <section className="space-y-4">
+        {/* Calories */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-base">Calories</span>
+            <div className="text-right">
+              <div className="font-semibold">{formatNumber(totals.calories)} kcal</div>
+              {effectiveTargetCalories && (
+                <div className="text-xs text-muted-foreground">
                   Target {formatNumber(effectiveTargetCalories)}
-                </span>
-              ) : (
-                <span className="text-muted-foreground">No target set</span>
+                </div>
               )}
             </div>
-            <Progress value={caloriesProgress} />
-            {effectiveTargetCalories != null && (
+          </div>
+          {effectiveTargetCalories != null && (
+            <>
+              <Progress value={caloriesProgress} />
               <div
                 className={cn(
                   "text-xs",
@@ -616,15 +616,14 @@ export default function TodayClient({
                   ? `${formatNumber(Math.abs(remainingCalories))} kcal over`
                   : `${formatNumber(remainingCalories ?? 0)} kcal remaining`}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </>
+          )}
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Macros</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+        {/* Macros */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Macros</div>
+          <div className="grid grid-cols-3 gap-3 text-sm">
             <MacroRow
               label="Protein"
               consumed={totals.protein}
@@ -640,117 +639,106 @@ export default function TodayClient({
               consumed={totals.fat}
               target={summary.targetMacros.fat}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Weight & BMI</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {latestWeightKg && heightCm ? (
-              <>
-                <div className="space-y-2">
-                  <div className="text-2xl font-bold">
-                    {latestWeightKg.toFixed(1)} kg
-                  </div>
-                  {bmi && (
-                    <div className="text-sm text-muted-foreground">
-                      BMI: <span className="font-medium">{bmi.toFixed(1)}</span>
-                    </div>
-                  )}
+        {/* Weight & BMI */}
+        {latestWeightKg && heightCm ? (
+          <div className="flex items-center justify-between py-2 border-t">
+            <div>
+              <div className="text-lg font-semibold">
+                {latestWeightKg.toFixed(1)} kg
+              </div>
+              {bmi && (
+                <div className="text-sm text-muted-foreground">
+                  BMI: <span className="font-medium">{bmi.toFixed(1)}</span>
                 </div>
-                <Link href="/weight">
-                  <Button variant="outline" size="sm" className="w-full">
-                    Track Weight
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  {!heightCm && !latestWeightKg
-                    ? "Set height and log weight to track BMI"
-                    : !heightCm
-                    ? "Set your height in profile to calculate BMI"
-                    : "Log your weight to see BMI"}
-                </p>
-                <Link href={!heightCm ? "/profile" : "/weight"}>
-                  <Button variant="outline" size="sm" className="w-full">
-                    {!heightCm ? "Set Height" : "Log Weight"}
-                  </Button>
-                </Link>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </div>
+            <Link href="/weight">
+              <Button variant="outline" size="sm">
+                Track Weight
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between py-2 border-t">
+            <p className="text-sm text-muted-foreground">
+              {!heightCm && !latestWeightKg
+                ? "Set height and log weight to track BMI"
+                : !heightCm
+                ? "Set your height in profile to calculate BMI"
+                : "Log your weight to see BMI"}
+            </p>
+            <Link href={!heightCm ? "/profile" : "/weight"}>
+              <Button variant="outline" size="sm">
+                {!heightCm ? "Set Height" : "Log Weight"}
+              </Button>
+            </Link>
+          </div>
+        )}
       </section>
 
-      <section className="grid gap-3 sm:gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Daily target override</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid gap-2">
-              <Label htmlFor="target-calories">Calories</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="target-calories"
-                  type="number"
-                  inputMode="numeric"
-                  placeholder={
-                    summary.profileTargetCalories
-                      ? String(summary.profileTargetCalories)
-                      : undefined
-                  }
-                  value={targetInput}
-                  onChange={(event) => setTargetInput(event.target.value)}
-                />
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setTargetInput("");
-                    handleTargetSave("");
-                  }}
-                >
-                  Clear
-                </Button>
-              </div>
-            </div>
-            <Button onClick={() => handleTargetSave()} disabled={isSavingTarget}>
-              {isSavingTarget ? "Saving..." : "Save target"}
+      {/* Target Override & Notes - Simplified */}
+      <section className="space-y-4 pt-4 border-t">
+        {/* Daily target override */}
+        <div className="space-y-2">
+          <Label htmlFor="target-calories" className="text-sm font-medium">Daily target override</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="target-calories"
+              type="number"
+              inputMode="numeric"
+              placeholder={
+                summary.profileTargetCalories
+                  ? String(summary.profileTargetCalories)
+                  : undefined
+              }
+              value={targetInput}
+              onChange={(event) => setTargetInput(event.target.value)}
+              className="flex-1"
+            />
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setTargetInput("");
+                handleTargetSave("");
+              }}
+            >
+              Clear
             </Button>
-          </CardContent>
-        </Card>
+            <Button onClick={() => handleTargetSave()} disabled={isSavingTarget}>
+              {isSavingTarget ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Notes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        {/* Notes */}
+        <div className="space-y-2">
+          <Label htmlFor="notes" className="text-sm font-medium">Notes</Label>
+          <div className="flex items-end gap-2">
             <Textarea
-              rows={5}
+              id="notes"
+              rows={3}
               value={notes}
               placeholder="How did today go?"
               onChange={(event) => setNotes(event.target.value)}
+              className="flex-1"
             />
             <Button onClick={handleNotesSave} disabled={isSavingNotes}>
-              {isSavingNotes ? "Saving..." : "Save notes"}
+              {isSavingNotes ? "Saving..." : "Save"}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </section>
 
       <Separator />
 
       <section className="space-y-3 sm:space-y-5">
         {meals.length === 0 && (
-          <Card>
-            <CardContent className="py-6 text-sm text-muted-foreground">
-              Create your meals in Settings → Meals to start tracking.
-            </CardContent>
-          </Card>
+          <div className="py-6 text-sm text-center text-muted-foreground">
+            Create your meals in Settings → Meals to start tracking.
+          </div>
         )}
 
         {meals.map((meal) => {
