@@ -7,18 +7,71 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
  * Uses service client to query auth.users directly
  */
 export async function checkUserExists(email: string): Promise<boolean> {
-  const supabase = createSupabaseServiceClient();
-  
-  const { data, error } = await supabase.auth.admin.listUsers();
-  
-  if (error) {
-    console.error("Error checking user existence:", error);
-    // Fail open for existing users - if we can't check, allow them through
-    // This ensures backwards compatibility
-    return true;
+  if (!email || email.trim().length === 0) {
+    return false;
   }
 
-  return data.users.some((user) => user.email?.toLowerCase() === email.toLowerCase());
+  const trimmedEmail = email.trim().toLowerCase();
+  const supabase = createSupabaseServiceClient();
+  
+  try {
+    // Try getUserByEmail first (more efficient if available)
+    // @ts-expect-error - getUserByEmail may not be in types but exists in newer Supabase versions
+    if (supabase.auth.admin.getUserByEmail) {
+      const { data, error } = await supabase.auth.admin.getUserByEmail(trimmedEmail);
+      
+      if (error) {
+        // If user not found, error code is usually "user_not_found" or 404
+        if (error.message?.includes("not found") || error.status === 404) {
+          return false;
+        }
+        console.error("Error checking user existence:", error);
+        // Fail closed for security - if we can't check, assume user doesn't exist
+        return false;
+      }
+
+      return !!data?.user;
+    }
+
+    // Fallback to listUsers with pagination handling
+    let page = 1;
+    const perPage = 1000; // Max per page
+    
+    while (true) {
+      const { data, error } = await supabase.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+      
+      if (error) {
+        console.error("Error checking user existence:", error);
+        // Fail closed for security
+        return false;
+      }
+
+      if (!data?.users || data.users.length === 0) {
+        // No more users to check
+        return false;
+      }
+
+      // Check if email exists in this page
+      const found = data.users.some((user) => user.email?.toLowerCase() === trimmedEmail);
+      if (found) {
+        return true;
+      }
+
+      // If we got fewer users than perPage, we've reached the end
+      if (data.users.length < perPage) {
+        return false;
+      }
+
+      page++;
+    }
+  } catch (err) {
+    console.error("Exception checking user existence:", err);
+    // Fail closed for security
+    return false;
+  }
 }
 
 /**

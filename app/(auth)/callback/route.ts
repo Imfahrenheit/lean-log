@@ -23,20 +23,30 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/signin?error=${error.message}`);
     }
 
-    // If this is a new user signup, mark the invite as used by email
+    // Mark the invite as used by email (for both new signups and existing users)
+    // The function will only mark if the invite is valid and unused
     if (data.user && data.user.email) {
       const serviceClient = createSupabaseServiceClient();
       
-      // Call the database function to mark the invite as used by email
-      const { error: inviteError } = await serviceClient.rpc("mark_invite_used_by_email", {
-        invite_email: data.user.email.toLowerCase(),
-        user_id: data.user.id,
-      });
+      try {
+        // Call the database function to mark the invite as used by email
+        const { data: inviteResult, error: inviteError } = await serviceClient.rpc("mark_invite_used_by_email", {
+          invite_email: data.user.email.toLowerCase(),
+          user_id: data.user.id,
+        });
 
-      if (inviteError) {
-        console.error("Error marking invite as used:", inviteError);
-        // Don't block the user from signing in if invite marking fails
-        // The invite will remain unused, but the user is already created
+        if (inviteError) {
+          console.error("Error marking invite as used:", inviteError);
+          // Don't block the user from signing in if invite marking fails
+          // The invite will remain unused, but the user is already created
+        } else if (inviteResult === false) {
+          // Invite not found or already used - this is expected for existing users
+          // but we log it for debugging
+          console.log("Invite not marked as used (may already be used or not found):", data.user.email);
+        }
+      } catch (err) {
+        console.error("Exception marking invite as used:", err);
+        // Continue - don't block user signin
       }
     }
   }

@@ -72,12 +72,32 @@ function SignInContent() {
     setLoading(true);
     setError(null);
     setMessage(null);
+
+    // Check if user exists first
+    const userExists = await checkUserExists(email);
+    
+    // If new user, validate invite exists for this email
+    if (!userExists) {
+      const validation = await validateInviteEmail(email);
+      if (!validation.valid) {
+        setLoading(false);
+        setError(validation.error || "You need an invite to sign up. Please contact an administrator.");
+        return;
+      }
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     setLoading(false);
-    if (error) return setError(error.message);
+    if (error) {
+      // If user doesn't exist and password login fails, they need to use magic link
+      if (error.message?.includes("Invalid login credentials") && !userExists) {
+        return setError("User not found. Please use the magic link to sign up.");
+      }
+      return setError(error.message);
+    }
     if (data.session) router.replace("/");
   }
 
