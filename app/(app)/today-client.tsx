@@ -65,8 +65,9 @@ import {
   TrashIcon,
   CopyIcon,
 } from "@radix-ui/react-icons";
-import { Mic } from "lucide-react";
+import { Mic, Image as ImageIcon } from "lucide-react";
 import { VoiceInputModal } from "./components/voice-input-modal";
+import { ImageInputModal } from "./components/image-input-modal";
 import type { MealEntry as VoiceMealEntry } from "@/lib/voice-schemas";
 
 type EntryFormState = {
@@ -228,6 +229,7 @@ export default function TodayClient({
   const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [duplicateDate, setDuplicateDate] = useState<string>("");
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
 
   const [isSavingEntry, startSavingEntry] = useTransition();
   const [isSavingTarget, startSavingTarget] = useTransition();
@@ -539,6 +541,14 @@ export default function TodayClient({
             <Mic className="mr-2 h-4 w-4" />
             Voice Input
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setImageModalOpen(true)}
+            className="h-10 sm:flex hidden"
+          >
+            <ImageIcon className="mr-2 h-4 w-4" />
+            Upload Image
+          </Button>
           <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="h-10">
@@ -800,23 +810,42 @@ export default function TodayClient({
         onCommit={handleVoiceCommit}
       />
 
-      {/* Floating Action Button for Voice Input */}
-      <button
-        onClick={() => setVoiceModalOpen(true)}
-        className="fixed bottom-20 right-4 sm:bottom-8 sm:right-8 z-50 
-                   w-14 h-14 sm:w-16 sm:h-16 
-                   bg-gradient-to-br from-blue-500 to-purple-600 
-                   hover:from-blue-600 hover:to-purple-700
-                   text-white rounded-full shadow-lg hover:shadow-xl 
-                   transition-all duration-300 ease-in-out
-                   flex items-center justify-center
-                   active:scale-95 hover:scale-110
-                   sm:flex"
-        aria-label="Open voice input"
-      >
-        <Mic className="w-6 h-6 sm:w-7 sm:h-7" />
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-      </button>
+      <ImageInputModal
+        open={imageModalOpen}
+        onOpenChange={setImageModalOpen}
+        onCommit={handleVoiceCommit}
+      />
+
+      {/* Floating Action Buttons for Voice and Image Input */}
+      <div className="fixed bottom-20 right-4 sm:bottom-8 sm:right-8 z-50 flex flex-col gap-3">
+        <button
+          onClick={() => setImageModalOpen(true)}
+          className="w-14 h-14 sm:w-16 sm:h-16 
+                     bg-gradient-to-br from-green-500 to-emerald-600 
+                     hover:from-green-600 hover:to-emerald-700
+                     text-white rounded-full shadow-lg hover:shadow-xl 
+                     transition-all duration-300 ease-in-out
+                     flex items-center justify-center
+                     active:scale-95 hover:scale-110"
+          aria-label="Open image upload"
+        >
+          <ImageIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+        </button>
+        <button
+          onClick={() => setVoiceModalOpen(true)}
+          className="w-14 h-14 sm:w-16 sm:h-16 
+                     bg-gradient-to-br from-blue-500 to-purple-600 
+                     hover:from-blue-600 hover:to-purple-700
+                     text-white rounded-full shadow-lg hover:shadow-xl 
+                     transition-all duration-300 ease-in-out
+                     flex items-center justify-center
+                     active:scale-95 hover:scale-110"
+          aria-label="Open voice input"
+        >
+          <Mic className="w-6 h-6 sm:w-7 sm:h-7" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+        </button>
+      </div>
     </div>
   );
 }
