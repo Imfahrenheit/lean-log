@@ -88,8 +88,18 @@ export function ImageInputModal({
     startParsing(async () => {
       try {
         // Step 1: Extract text from image using Tesseract.js (client-side OCR)
-        toast.info("Extracting text from image...");
-        const worker = await createWorker("eng");
+        // Use better OCR settings for nutritional data
+        const worker = await createWorker("eng", 1, {
+          logger: () => {
+            // Suppress Tesseract logs
+          },
+        });
+        
+        // Use better OCR configuration for nutritional data
+        await worker.setParameters({
+          tessedit_char_whitelist: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.,:;()[]{}%/- gkcal",
+        });
+
         const {
           data: { text },
         } = await worker.recognize(selectedImage);
@@ -103,7 +113,6 @@ export function ImageInputModal({
         }
 
         // Step 2: Parse the extracted text using the same endpoint as voice input
-        toast.info("Parsing nutritional information...");
         const response = await fetch("/api/voice/parse", {
           method: "POST",
           headers: {
@@ -225,26 +234,41 @@ export function ImageInputModal({
 
             {/* Image Upload Area */}
             {!selectedImage ? (
-              <div
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileInputChange}
-                  className="hidden"
-                />
-                <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm font-medium mb-2">
-                  Click to upload or drag and drop
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  PNG, JPG, GIF up to 10MB
-                </p>
+              <div className="space-y-3">
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileInputChange}
+                    className="hidden"
+                  />
+                  <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-sm font-medium mb-2">
+                    Click to upload or drag and drop
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    PNG, JPG, GIF up to 10MB
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-2">or</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full"
+                  >
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    Take Photo / Choose from Gallery
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -425,14 +449,21 @@ export function ImageInputModal({
                 <Input
                   id="edit-protein"
                   type="number"
-                  inputMode="numeric"
-                  value={editForm.protein_g}
-                  onChange={(e) =>
+                  inputMode="decimal"
+                  step="0.1"
+                  value={editForm.protein_g === 0 ? "" : editForm.protein_g}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setEditForm({
                       ...editForm,
-                      protein_g: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                      protein_g: val === "" ? 0 : parseFloat(val) || 0,
+                    });
+                  }}
+                  onFocus={(e) => {
+                    if (editForm.protein_g === 0) {
+                      e.target.select();
+                    }
+                  }}
                 />
               </div>
 
@@ -441,14 +472,21 @@ export function ImageInputModal({
                 <Input
                   id="edit-carbs"
                   type="number"
-                  inputMode="numeric"
-                  value={editForm.carbs_g}
-                  onChange={(e) =>
+                  inputMode="decimal"
+                  step="0.1"
+                  value={editForm.carbs_g === 0 ? "" : editForm.carbs_g}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setEditForm({
                       ...editForm,
-                      carbs_g: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                      carbs_g: val === "" ? 0 : parseFloat(val) || 0,
+                    });
+                  }}
+                  onFocus={(e) => {
+                    if (editForm.carbs_g === 0) {
+                      e.target.select();
+                    }
+                  }}
                 />
               </div>
 
@@ -457,14 +495,21 @@ export function ImageInputModal({
                 <Input
                   id="edit-fat"
                   type="number"
-                  inputMode="numeric"
-                  value={editForm.fat_g}
-                  onChange={(e) =>
+                  inputMode="decimal"
+                  step="0.1"
+                  value={editForm.fat_g === 0 ? "" : editForm.fat_g}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setEditForm({
                       ...editForm,
-                      fat_g: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                      fat_g: val === "" ? 0 : parseFloat(val) || 0,
+                    });
+                  }}
+                  onFocus={(e) => {
+                    if (editForm.fat_g === 0) {
+                      e.target.select();
+                    }
+                  }}
                 />
               </div>
 
@@ -473,7 +518,8 @@ export function ImageInputModal({
                 <Input
                   id="edit-calories"
                   type="number"
-                  inputMode="numeric"
+                  inputMode="decimal"
+                  step="0.1"
                   value={editForm.calories_override ?? ""}
                   onChange={(e) =>
                     setEditForm({

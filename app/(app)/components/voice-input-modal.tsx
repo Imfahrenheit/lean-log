@@ -429,14 +429,21 @@ export function VoiceInputModal({
                 <Input
                   id="edit-protein"
                   type="number"
-                  inputMode="numeric"
-                  value={editForm.protein_g}
-                  onChange={(e) =>
+                  inputMode="decimal"
+                  step="0.1"
+                  value={editForm.protein_g === 0 ? "" : editForm.protein_g}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setEditForm({
                       ...editForm,
-                      protein_g: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                      protein_g: val === "" ? 0 : parseFloat(val) || 0,
+                    });
+                  }}
+                  onFocus={(e) => {
+                    if (editForm.protein_g === 0) {
+                      e.target.select();
+                    }
+                  }}
                 />
               </div>
 
@@ -445,14 +452,21 @@ export function VoiceInputModal({
                 <Input
                   id="edit-carbs"
                   type="number"
-                  inputMode="numeric"
-                  value={editForm.carbs_g}
-                  onChange={(e) =>
+                  inputMode="decimal"
+                  step="0.1"
+                  value={editForm.carbs_g === 0 ? "" : editForm.carbs_g}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setEditForm({
                       ...editForm,
-                      carbs_g: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                      carbs_g: val === "" ? 0 : parseFloat(val) || 0,
+                    });
+                  }}
+                  onFocus={(e) => {
+                    if (editForm.carbs_g === 0) {
+                      e.target.select();
+                    }
+                  }}
                 />
               </div>
 
@@ -461,14 +475,21 @@ export function VoiceInputModal({
                 <Input
                   id="edit-fat"
                   type="number"
-                  inputMode="numeric"
-                  value={editForm.fat_g}
-                  onChange={(e) =>
+                  inputMode="decimal"
+                  step="0.1"
+                  value={editForm.fat_g === 0 ? "" : editForm.fat_g}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setEditForm({
                       ...editForm,
-                      fat_g: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                      fat_g: val === "" ? 0 : parseFloat(val) || 0,
+                    });
+                  }}
+                  onFocus={(e) => {
+                    if (editForm.fat_g === 0) {
+                      e.target.select();
+                    }
+                  }}
                 />
               </div>
 
@@ -477,7 +498,8 @@ export function VoiceInputModal({
                 <Input
                   id="edit-calories"
                   type="number"
-                  inputMode="numeric"
+                  inputMode="decimal"
+                  step="0.1"
                   value={editForm.calories_override ?? ""}
                   onChange={(e) =>
                     setEditForm({

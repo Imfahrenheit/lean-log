@@ -143,27 +143,29 @@ function createEntryForm(
   return {
     mealId,
     name: "",
-    protein: "0",
-    carbs: "0",
-    fat: "0",
+    protein: "",
+    carbs: "",
+    fat: "",
     caloriesOverride: "",
   };
 }
 
-function parseIntField(value: string): number {
-  const parsed = Number(value);
+function parseFloatField(value: string): number {
+  const trimmed = value?.trim();
+  if (!trimmed) return 0;
+  const parsed = parseFloat(trimmed);
   if (!Number.isFinite(parsed) || parsed < 0) {
     return 0;
   }
-  return Math.round(parsed);
+  return parsed;
 }
 
-function parseOptionalIntField(value: string): number | null {
+function parseOptionalFloatField(value: string): number | null {
   const trimmed = value?.trim();
   if (!trimmed) return null;
-  const parsed = Number(trimmed);
+  const parsed = parseFloat(trimmed);
   if (!Number.isFinite(parsed)) return null;
-  return Math.round(parsed);
+  return parsed;
 }
 
 function formatNumber(value: number): string {
@@ -333,10 +335,10 @@ export default function TodayClient({
   }
 
   async function persistEntry() {
-    const protein = parseIntField(entryForm.protein);
-    const carbs = parseIntField(entryForm.carbs);
-    const fat = parseIntField(entryForm.fat);
-    const caloriesOverride = parseOptionalIntField(entryForm.caloriesOverride);
+    const protein = parseFloatField(entryForm.protein);
+    const carbs = parseFloatField(entryForm.carbs);
+    const fat = parseFloatField(entryForm.fat);
+    const caloriesOverride = parseOptionalFloatField(entryForm.caloriesOverride);
     const name = entryForm.name.trim();
 
     if (!name) {
@@ -1075,15 +1077,34 @@ function NumberField({
   onChange: (value: string) => void;
   placeholder?: string;
 }) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    // If value is "0" and user is typing, clear it
+    if (value === "0" && newValue.length > 1 && newValue.startsWith("0") && newValue[1] !== ".") {
+      onChange(newValue.slice(1));
+    } else {
+      onChange(newValue);
+    }
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Select all text when focusing on "0" to make it easy to replace
+    if (value === "0") {
+      e.target.select();
+    }
+  };
+
   return (
     <div className="space-y-1">
       <Label>{label}</Label>
       <Input
         type="number"
-        inputMode="numeric"
+        inputMode="decimal"
+        step="0.1"
         value={value}
         placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={handleChange}
+        onFocus={handleFocus}
       />
     </div>
   );
