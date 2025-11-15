@@ -432,7 +432,7 @@ export default function TodayClient({
   }
 
   function handleTargetSave(nextValue?: string) {
-    const parsed = parseOptionalIntField(
+    const parsed = parseOptionalFloatField(
       nextValue !== undefined ? nextValue : targetInput
     );
     startSavingTarget(async () => {

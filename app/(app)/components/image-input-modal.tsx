@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import Image from "next/image";
 import { createWorker } from "tesseract.js";
 
 import {
@@ -272,12 +273,16 @@ export function ImageInputModal({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="relative">
-                  <img
-                    src={imagePreview || ""}
-                    alt="Preview"
-                    className="w-full max-h-64 object-contain rounded-lg border"
-                  />
+                <div className="relative w-full h-64">
+                  {imagePreview && (
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      fill
+                      className="object-contain rounded-lg border"
+                      unoptimized
+                    />
+                  )}
                   <Button
                     variant="destructive"
                     size="icon"
