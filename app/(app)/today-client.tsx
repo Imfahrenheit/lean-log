@@ -65,7 +65,7 @@ import {
   TrashIcon,
   CopyIcon,
 } from "@radix-ui/react-icons";
-import { Mic, Image as ImageIcon } from "lucide-react";
+import { Mic, Image as ImageIcon, Flame, Zap, TrendingDown, Droplet, Scale, ScanLine } from "lucide-react";
 import { VoiceInputModal } from "./components/voice-input-modal";
 import { ImageInputModal } from "./components/image-input-modal";
 import type { MealEntry as VoiceMealEntry } from "@/lib/voice-schemas";
@@ -522,7 +522,7 @@ export default function TodayClient({
     : null;
 
   return (
-    <div className="max-w-5xl mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6 pb-24 sm:pb-6">
+    <div className="max-w-5xl mx-auto p-3 sm:p-4 space-y-6 pb-24 sm:pb-6 bg-slate-50/50 min-h-screen">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl sm:text-2xl font-semibold">Today</h2>
@@ -535,10 +535,11 @@ export default function TodayClient({
             onChange={(event) => handleDateChange(event.target.value)}
             className="h-10"
           />
+          {/* Desktop-only buttons - mobile uses Quick Actions */}
           <Button
             variant="outline"
             onClick={() => setVoiceModalOpen(true)}
-            className="h-10 sm:flex hidden"
+            className="h-10 hidden sm:flex"
           >
             <Mic className="mr-2 h-4 w-4" />
             Voice Input
@@ -546,17 +547,16 @@ export default function TodayClient({
           <Button
             variant="outline"
             onClick={() => setImageModalOpen(true)}
-            className="h-10 sm:flex hidden"
+            className="h-10 hidden sm:flex"
           >
             <ImageIcon className="mr-2 h-4 w-4" />
             Upload Image
           </Button>
           <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-10">
+              <Button variant="outline" className="h-10 hidden sm:flex">
                 <CopyIcon className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Duplicate</span>
-                <span className="sm:hidden">Copy Day</span>
+                Duplicate
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -598,105 +598,196 @@ export default function TodayClient({
         </div>
       </div>
 
-      {/* Summary Stats - Simplified without cards */}
-      <section className="space-y-4">
-        {/* Calories */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-base">Calories</span>
-            <div className="text-right">
-              <div className="font-semibold">{formatNumber(totals.calories)} kcal</div>
-              {effectiveTargetCalories && (
-                <div className="text-xs text-muted-foreground">
-                  Target {formatNumber(effectiveTargetCalories)}
+      {/* Summary Stats - Card-based layout matching Figma */}
+      <section className="space-y-6">
+        {/* Calories and Macros Card Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
+          {/* Calories Card */}
+          <Card className="bg-slate-50 shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)] rounded-2xl border-0">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#2b7fff] flex items-center justify-center flex-shrink-0">
+                    <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm sm:text-base font-semibold text-[#0f172b]">Calories Today</h3>
+                    <p className="text-xs sm:text-sm text-[#45556c] truncate">
+                      {remainingCalories != null && remainingCalories >= 0
+                        ? `${formatNumber(remainingCalories)} kcal remaining`
+                        : remainingCalories != null
+                        ? `${formatNumber(Math.abs(remainingCalories))} kcal over`
+                        : "No target set"}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0 ml-2">
+                  <div className="text-2xl sm:text-4xl font-bold text-[#0f172b] leading-[28px] sm:leading-[40px]">
+                    {formatNumber(totals.calories)}
+                  </div>
+                  {effectiveTargetCalories && (
+                    <div className="text-xs sm:text-sm text-[#45556c] mt-0.5 sm:mt-1">
+                      of {formatNumber(effectiveTargetCalories)} kcal
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Gradient Progress Bar */}
+              {effectiveTargetCalories != null && (
+                <div className="mb-6">
+                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#615fff] to-[#ad46ff] transition-all duration-300"
+                      style={{ width: `${Math.min(caloriesProgress, 100)}%` }}
+                    />
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-          {effectiveTargetCalories != null && (
-            <>
-              <Progress value={caloriesProgress} />
-              <div
-                className={cn(
-                  "text-xs",
-                  remainingCalories != null && remainingCalories < 0
-                    ? "text-destructive"
-                    : "text-muted-foreground"
-                )}
-              >
-                {remainingCalories != null && remainingCalories < 0
-                  ? `${formatNumber(Math.abs(remainingCalories))} kcal over`
-                  : `${formatNumber(remainingCalories ?? 0)} kcal remaining`}
-              </div>
-            </>
-          )}
-        </div>
 
-        {/* Macros */}
-        <div className="space-y-2">
-          <div className="text-sm font-medium">Macros</div>
-          <div className="grid grid-cols-3 gap-3 text-sm">
-            <MacroRow
-              label="Protein"
-              consumed={totals.protein}
-              target={summary.targetMacros.protein}
-            />
-            <MacroRow
-              label="Carbs"
-              consumed={totals.carbs}
-              target={summary.targetMacros.carbs}
-            />
-            <MacroRow
-              label="Fat"
-              consumed={totals.fat}
-              target={summary.targetMacros.fat}
-            />
-          </div>
-        </div>
-
-        {/* Weight & BMI */}
-        {latestWeightKg && heightCm ? (
-          <div className="flex items-center justify-between py-2 border-t">
-            <div>
-              <div className="text-lg font-semibold">
-                {latestWeightKg.toFixed(1)} kg
+              {/* Macro Cards */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                <MacroCard
+                  label="Protein"
+                  value={totals.protein}
+                  target={summary.targetMacros.protein}
+                />
+                <MacroCard
+                  label="Carbs"
+                  value={totals.carbs}
+                  target={summary.targetMacros.carbs}
+                />
+                <MacroCard
+                  label="Fat"
+                  value={totals.fat}
+                  target={summary.targetMacros.fat}
+                />
               </div>
-              {bmi && (
-                <div className="text-sm text-muted-foreground">
-                  BMI: <span className="font-medium">{bmi.toFixed(1)}</span>
+            </CardContent>
+          </Card>
+
+          {/* Weight & BMI Card */}
+          <Card className="shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] rounded-2xl border-0">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                </div>
+                <h3 className="text-sm sm:text-base font-semibold">Weight & BMI</h3>
+              </div>
+              {latestWeightKg && heightCm ? (
+                <div className="space-y-3 sm:space-y-4">
+                  <div>
+                    <div className="text-2xl sm:text-3xl font-bold mb-2">
+                      {latestWeightKg.toFixed(1)} kg
+                    </div>
+                    {bmi && (
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <span className="text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border border-black">
+                          BMI: {bmi.toFixed(1)}
+                        </span>
+                        <span className="text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                          Normal
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <Link href="/weight">
+                    <Button variant="outline" className="w-full h-9 sm:h-10">
+                      Track Weight
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3 sm:space-y-4">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {!heightCm && !latestWeightKg
+                      ? "Set height and log weight to track BMI"
+                      : !heightCm
+                      ? "Set your height in profile to calculate BMI"
+                      : "Log your weight to see BMI"}
+                  </p>
+                  <Link href={!heightCm ? "/profile" : "/weight"}>
+                    <Button variant="outline" className="w-full h-9 sm:h-10">
+                      {!heightCm ? "Set Height" : "Log Weight"}
+                    </Button>
+                  </Link>
                 </div>
               )}
-            </div>
-            <Link href="/weight">
-              <Button variant="outline" size="sm">
-                Track Weight
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between py-2 border-t">
-            <p className="text-sm text-muted-foreground">
-              {!heightCm && !latestWeightKg
-                ? "Set height and log weight to track BMI"
-                : !heightCm
-                ? "Set your height in profile to calculate BMI"
-                : "Log your weight to see BMI"}
-            </p>
-            <Link href={!heightCm ? "/profile" : "/weight"}>
-              <Button variant="outline" size="sm">
-                {!heightCm ? "Set Height" : "Log Weight"}
-              </Button>
-            </Link>
-          </div>
-        )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Stat Cards Row - 2x2 on mobile, 4 columns on desktop */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+          <StatCard
+            icon={<Zap className="w-4 h-4" />}
+            label="Meals Logged"
+            value={`${meals.filter(m => (entriesByMeal.get(m.id)?.length ?? 0) > 0).length}/${meals.length}`}
+          />
+          <StatCard
+            icon={<Flame className="w-4 h-4" />}
+            label="Streak"
+            value="—"
+            emoji="🔥"
+          />
+          <StatCard
+            icon={<TrendingDown className="w-4 h-4" />}
+            label="Avg Calories"
+            value={formatNumber(totals.calories)}
+          />
+          <StatCard
+            icon={<Droplet className="w-4 h-4" />}
+            label="Water"
+            value="—"
+          />
+        </div>
       </section>
 
-      {/* Target Override & Notes - Simplified */}
-      <section className="space-y-4 pt-4 border-t">
+      {/* Quick Actions - Mobile optimized */}
+      <Card className="shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] rounded-2xl border-0">
+        <CardHeader>
+          <CardTitle className="text-base">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setDuplicateOpen(true)}
+              className="h-9 justify-start"
+            >
+              <CopyIcon className="mr-2 h-4 w-4" />
+              Copy Day
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setVoiceModalOpen(true)}
+              className="h-9 justify-start"
+            >
+              <Mic className="mr-2 h-4 w-4" />
+              Voice Input
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setImageModalOpen(true)}
+              className="h-9 col-span-2 justify-start"
+            >
+              <ScanLine className="mr-2 h-4 w-4" />
+              Scan Food
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Target Override & Notes - Card-based */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Daily target override */}
-        <div className="space-y-2">
-          <Label htmlFor="target-calories" className="text-sm font-medium">Daily target override</Label>
-          <div className="flex items-center gap-2">
+        <Card className="shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] rounded-2xl border-0">
+          <CardHeader>
+            <CardTitle className="text-base">Daily Target Override</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
             <Input
               id="target-calories"
               type="number"
@@ -722,26 +813,31 @@ export default function TodayClient({
             <Button onClick={() => handleTargetSave()} disabled={isSavingTarget}>
               {isSavingTarget ? "Saving..." : "Save"}
             </Button>
-          </div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Notes */}
-        <div className="space-y-2">
-          <Label htmlFor="notes" className="text-sm font-medium">Notes</Label>
-          <div className="flex items-end gap-2">
-            <Textarea
-              id="notes"
-              rows={3}
-              value={notes}
-              placeholder="How did today go?"
-              onChange={(event) => setNotes(event.target.value)}
-              className="flex-1"
-            />
-            <Button onClick={handleNotesSave} disabled={isSavingNotes}>
-              {isSavingNotes ? "Saving..." : "Save"}
-            </Button>
-          </div>
-        </div>
+        <Card className="shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] rounded-2xl border-0">
+          <CardHeader>
+            <CardTitle className="text-base">Daily Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-2">
+              <Textarea
+                id="notes"
+                rows={3}
+                value={notes}
+                placeholder="How did today go? Any thoughts or observations..."
+                onChange={(event) => setNotes(event.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={handleNotesSave} disabled={isSavingNotes}>
+                {isSavingNotes ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       <Separator />
@@ -852,23 +948,93 @@ export default function TodayClient({
   );
 }
 
-function MacroRow({
+function MacroCard({
   label,
-  consumed,
+  value,
   target,
 }: {
   label: string;
-  consumed: number;
+  value: number;
   target: number;
 }) {
+  const progress = target > 0 ? Math.min((value / target) * 100, 100) : 0;
+  
   return (
-    <div className="flex items-center justify-between">
-      <span>{label}</span>
-      <span className="text-muted-foreground">
-        {formatNumber(consumed)}
-        {target != null ? ` / ${formatNumber(target)}` : ""} g
-      </span>
+    <div className="bg-white border border-slate-200 rounded-2xl p-2 sm:p-3.5 space-y-1">
+      <div className="text-center">
+        <div className="text-2xl sm:text-3xl font-bold text-[#0f172b] leading-[28px] sm:leading-[36px]">
+          {formatNumber(value)}g
+        </div>
+      </div>
+      <div className="text-center">
+        <div className="text-xs sm:text-sm text-[#45556c]">{label}</div>
+      </div>
+      <div className="text-center">
+        <div className="text-[10px] sm:text-xs text-[#62748e]">
+          of {formatNumber(target)}g
+        </div>
+      </div>
+      {target > 0 && (
+        <div className="mt-1 sm:mt-2">
+          <div className="h-0.5 sm:h-1 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#615fff] to-[#ad46ff] transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+  change,
+  changeType,
+  emoji,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string;
+  change?: string;
+  changeType?: "positive" | "negative";
+  emoji?: string;
+}) {
+  return (
+    <Card className="shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] rounded-2xl border-0">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{label}</div>
+            <div className="text-lg sm:text-2xl font-bold mb-0.5 sm:mb-1">{value}</div>
+            {(change || emoji) && (
+              <div className="flex items-center gap-1">
+                {change && (
+                  <span
+                    className={cn(
+                      "text-[10px] sm:text-xs font-medium",
+                      changeType === "positive" && "text-green-600",
+                      changeType === "negative" && "text-red-600"
+                    )}
+                  >
+                    {change}
+                  </span>
+                )}
+                {emoji && <span className="text-[10px] sm:text-xs">{emoji}</span>}
+              </div>
+            )}
+          </div>
+          {icon && (
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 flex-shrink-0 ml-2">
+              {icon}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
